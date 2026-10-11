@@ -1,0 +1,1788 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simulador | Optimización termoenergética del moldeo por soplado de rHDPE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f2f5f6;--surface:#ffffff;--surface2:#e9eef1;--ink:#13222c;--muted:#566874;--line:#d3dce1;
+  --cold:#1b6cb0;--cold-bg:#e1eefa;--heat:#c9520f;--heat-bg:#fbe9dd;
+  --ok:#1d7a4d;--ok-bg:#dff3e8;--warn:#8f6200;--warn-bg:#fbf0d2;--bad:#b3261e;--bad-bg:#fbe2df;
+  --sim:#6a4fb3;--sim-bg:#ece6f8;--elec:#4a5b68;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"Public Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e171d;--surface:#15222b;--surface2:#1d2e39;--ink:#e4edf2;--muted:#9bb0bd;--line:#2a3d4a;
+    --cold:#6bb4ee;--cold-bg:#16344b;--heat:#f08a4e;--heat-bg:#44261a;
+    --ok:#58c98c;--ok-bg:#163a2a;--warn:#e5b94a;--warn-bg:#40340f;--bad:#ef7b73;--bad-bg:#46201d;
+    --sim:#a995e6;--sim-bg:#2b2650;--elec:#9bb0bd;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e171d;--surface:#15222b;--surface2:#1d2e39;--ink:#e4edf2;--muted:#9bb0bd;--line:#2a3d4a;
+  --cold:#6bb4ee;--cold-bg:#16344b;--heat:#f08a4e;--heat-bg:#44261a;
+  --ok:#58c98c;--ok-bg:#163a2a;--warn:#e5b94a;--warn-bg:#40340f;--bad:#ef7b73;--bad-bg:#46201d;
+  --sim:#a995e6;--sim-bg:#2b2650;--elec:#9bb0bd;
+}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 64px);scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6}
+h1,h2,h3,h4{font-family:var(--display);line-height:1.15;margin:0}
+h2{font-size:clamp(1.6rem,3vw,2.2rem);letter-spacing:-.01em}
+h3{font-size:1.2rem;margin-top:2rem;margin-bottom:.6rem}
+h4{font-size:1rem;margin:1.2rem 0 .4rem;font-weight:700}
+p{margin:.5rem 0;max-width:74ch}
+a{color:var(--cold)}
+:focus-visible{outline:3px solid var(--cold);outline-offset:2px}
+.layout{display:grid;grid-template-columns:240px minmax(0,1fr);max-width:1320px;margin:0 auto}
+nav#toc{position:sticky;top:env(safe-area-inset-top,0px);align-self:start;max-height:100vh;overflow-y:auto;padding:20px 14px 20px 20px}
+nav#toc .brand{font-family:var(--display);font-weight:700;font-size:1rem;line-height:1.2;margin-bottom:14px}
+nav#toc .brand small{display:block;font-family:var(--body);font-weight:400;color:var(--muted);font-size:.78rem;margin-top:4px}
+nav#toc a{display:block;padding:7px 10px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:.9rem;border-left:3px solid transparent}
+nav#toc a:hover{background:var(--surface2);color:var(--ink)}
+nav#toc a.act{background:var(--surface);color:var(--ink);border-left-color:var(--cold);font-weight:600}
+#theme{margin-top:14px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font:inherit;font-size:.85rem;cursor:pointer}
+main{padding:28px 28px 80px;min-width:0}
+section{margin-bottom:64px}
+.kicker{color:var(--muted);font-size:.9rem;margin:6px 0 18px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.card h4:first-child{margin-top:0}
+.note{border-left:4px solid var(--cold);background:var(--surface);padding:12px 16px;border-radius:0 10px 10px 0;margin:14px 0;max-width:80ch}
+.note.warn{border-left-color:var(--warn);background:var(--warn-bg)}
+.note.bad{border-left-color:var(--bad);background:var(--bad-bg)}
+.note.ok{border-left-color:var(--ok);background:var(--ok-bg)}
+.chip{display:inline-block;font-size:.74rem;font-weight:600;padding:2px 9px;border-radius:99px;white-space:nowrap;vertical-align:middle}
+.c-sup{background:var(--warn-bg);color:var(--warn)}
+.c-calc{background:var(--cold-bg);color:var(--cold)}
+.c-sim{background:var(--sim-bg);color:var(--sim)}
+.c-med{background:var(--surface2);color:var(--muted)}
+.c-ok{background:var(--ok-bg);color:var(--ok)}
+.c-ref{background:var(--heat-bg);color:var(--heat)}
+.c-bad{background:var(--bad-bg);color:var(--bad)}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:12px 0}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:.92rem}
+caption{text-align:left;font-weight:600;padding:12px 14px 4px;font-family:var(--display);font-size:1rem}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:.84rem;background:var(--surface2)}
+tr:last-child td{border-bottom:0}
+td.n,th.n{font-variant-numeric:tabular-nums}
+select,input[type=number],input[type=text],textarea{font:inherit;font-size:.9rem;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 8px;max-width:100%}
+textarea{width:100%;min-height:70px}
+input[type=number]{width:92px}
+button.btn{font:inherit;font-size:.88rem;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 13px;cursor:pointer}
+button.btn:hover{background:var(--surface2)}
+button.btn.on{background:var(--cold);color:#fff;border-color:var(--cold)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:18px 0}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;border-top:4px solid var(--cold)}
+.kpi.h{border-top-color:var(--heat)}.kpi.e{border-top-color:var(--elec)}.kpi.g{border-top-color:var(--ok)}
+.kpi .l{font-size:.8rem;color:var(--muted)}
+.kpi .v{font-family:var(--display);font-size:1.75rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.2}
+.kpi .v small{font-size:.9rem;font-weight:500;color:var(--muted)}
+.hero h1{font-size:clamp(2rem,5vw,3.4rem);letter-spacing:-.02em;max-width:20ch}
+.hero .sub{font-size:1.05rem;color:var(--muted);max-width:60ch;margin-top:12px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin:16px 0;align-items:center;font-size:.85rem;color:var(--muted)}
+.fig{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;margin:14px 0}
+.fig figcaption,.figcap{font-size:.85rem;color:var(--muted);margin-top:8px}
+.fig svg{display:block;width:100%;height:auto;margin:0 auto}
+svg text{font-family:var(--body);fill:var(--ink)}
+.nd{fill:var(--surface);stroke:var(--muted);stroke-width:1.2}
+.nd.heat{fill:var(--heat-bg);stroke:var(--heat)}.nd.cold{fill:var(--cold-bg);stroke:var(--cold)}
+.nd.ok{fill:var(--ok-bg);stroke:var(--ok)}.nd.bad{fill:var(--bad-bg);stroke:var(--bad)}
+.nd.warn{fill:var(--warn-bg);stroke:var(--warn)}.nd.sim{fill:var(--sim-bg);stroke:var(--sim)}
+.nd.decision{stroke-dasharray:5 3;stroke-width:1.6}
+.nt{font-size:12px;text-anchor:middle}
+.elab{fill:var(--bg);stroke:var(--line)}.elabt{font-size:11px;text-anchor:middle;fill:var(--muted)}
+.sl{display:grid;grid-template-columns:minmax(150px,1.2fr) minmax(120px,2fr) auto auto auto;gap:8px 10px;align-items:center;padding:6px 0;border-bottom:1px dashed var(--line)}
+.sl label{font-size:.9rem}
+.sl input[type=range]{width:100%;accent-color:var(--cold)}
+.sl .u{font-size:.85rem;color:var(--muted);min-width:56px}
+.sl .rst{background:none;border:1px solid var(--line);border-radius:6px;color:var(--muted);cursor:pointer;padding:2px 8px;font-size:.85rem}
+.sl .rep{font-size:.78rem;color:var(--muted);grid-column:1 / -1;margin-top:-4px}
+.eq{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin:10px 0;font-size:1.08rem;overflow-x:auto;white-space:nowrap}
+.eq .d{display:block;font-size:.82rem;color:var(--muted);white-space:normal;margin-top:6px}
+.frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 4px;font-size:.95em}
+.frac>span:first-child{border-bottom:1.5px solid var(--ink);padding:0 4px 2px}
+.frac>span:last-child{padding:2px 4px 0}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:10px 0;overflow-x:auto}
+.step b.r{color:var(--cold);font-variant-numeric:tabular-nums}
+.step .res{font-family:var(--display);font-size:1.25rem;font-weight:700;margin-top:4px}
+.checks{list-style:none;padding:0;margin:8px 0}
+.checks li{display:flex;gap:10px;align-items:flex-start;padding:9px 12px;border:1px solid var(--line);border-radius:10px;margin:6px 0;background:var(--surface);max-width:86ch}
+.checks input{margin-top:5px;width:18px;height:18px;accent-color:var(--ok);flex:none}
+.prog{height:8px;background:var(--surface2);border-radius:99px;overflow:hidden;max-width:300px;margin:6px 0}
+.prog i{display:block;height:100%;background:var(--ok);width:0;transition:width .25s}
+.res-box{background:var(--surface2);border-radius:10px;padding:10px 14px;margin-top:10px;font-variant-numeric:tabular-nums}
+.flow-sm{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.flow-sm span.s{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:.88rem}
+.flow-sm span.s.heat{background:var(--heat-bg);border-color:var(--heat)}
+.flow-sm span.s.cold{background:var(--cold-bg);border-color:var(--cold)}
+.flow-sm i{color:var(--muted);font-style:normal}
+.refs li{margin:10px 0;max-width:90ch;overflow-wrap:anywhere}
+.val{font-variant-numeric:tabular-nums;font-weight:600}
+@media (max-width:900px){
+  .layout{grid-template-columns:minmax(0,1fr)}
+  nav#toc{top:env(safe-area-inset-top,0px);z-index:20;display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;max-height:none;background:var(--bg);border-bottom:1px solid var(--line);padding:8px 12px;align-items:center}
+  nav#toc .brand{display:none}
+  nav#toc a{white-space:nowrap;border-left:0;border-bottom:3px solid transparent}
+  nav#toc a.act{border-bottom-color:var(--cold)}
+  #theme{margin:0 0 0 8px;white-space:nowrap}
+  main{padding:20px 16px 60px}
+  .sl{grid-template-columns:1fr auto auto}
+  .sl input[type=range]{grid-column:1 / -1;order:2}
+  .sl label{grid-column:1 / -1}
+}
+
+/* ===== Simulador ===== */
+.appbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;display:flex;gap:10px 14px;align-items:center;flex-wrap:wrap;padding:8px 20px;background:var(--surface);border-bottom:1px solid var(--line)}
+.ab-title{font-family:var(--display);font-weight:700;font-size:1.02rem}
+.ab-title small{display:block;font-family:var(--body);font-weight:400;font-size:.74rem;color:var(--muted)}
+.ab-tabs{display:flex;gap:4px;margin-left:auto}
+.tabbtn{font:inherit;font-size:.9rem;background:transparent;color:var(--muted);border:1px solid transparent;border-radius:8px;padding:7px 13px;cursor:pointer}
+.tabbtn:hover{background:var(--surface2);color:var(--ink)}
+.tabbtn.on{background:var(--cold);color:#fff}
+#view-doc[hidden],.mod[hidden],#view-sim[hidden]{display:none}
+#view-doc nav#toc{top:calc(env(safe-area-inset-top,0px) + 56px)}
+.sim{max-width:1320px;margin:0 auto;padding:14px 20px 80px}
+.transport{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;position:sticky;top:calc(env(safe-area-inset-top,0px) + 54px);z-index:30;padding:10px 14px}
+.transport label{font-size:.85rem}
+.hud{font-size:.86rem;color:var(--muted)}
+.hud b{color:var(--ink);font-variant-numeric:tabular-nums}
+.mods{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 6px}
+.mods .tabbtn{border-color:var(--line);background:var(--surface)}
+.mods .tabbtn.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.two{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr);gap:14px;align-items:start}
+.three{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.tl{display:flex;position:relative;height:38px;border-radius:8px;overflow:hidden;border:1px solid var(--line);margin-top:10px}
+.tl .seg{display:flex;align-items:center;justify-content:center;font-size:.72rem;padding:0 4px;text-align:center;border-right:1px solid var(--line);overflow:hidden;line-height:1.1}
+.tl .seg.s0{background:var(--heat-bg)}.tl .seg.s1{background:var(--warn-bg)}.tl .seg.s2{background:var(--cold-bg)}.tl .seg.s3{background:var(--ok-bg)}
+.tl .ph{position:absolute;top:0;bottom:0;width:3px;background:var(--ink);left:0}
+canvas.ch{width:100%;height:150px;display:block;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.chl{font-size:.8rem;color:var(--muted);margin:2px 0 8px}
+.nd.dim{fill:var(--bg);stroke:var(--line);stroke-dasharray:3 3}
+.pl-body{fill:var(--surface);stroke:var(--muted);stroke-width:1.2}
+.btn.warnb{border-color:var(--warn);color:var(--warn)}
+.btn.badb{border-color:var(--bad);color:var(--bad)}
+.btn.badb.on{background:var(--bad);color:#fff}
+.btn.warnb.on{background:var(--warn);color:var(--bg)}
+.sem-ok{color:var(--ok);font-weight:600}.sem-bad{color:var(--bad);font-weight:600}.sem-pend{color:var(--muted);font-weight:600}
+.crit{display:grid;grid-template-columns:auto 1fr auto;gap:6px 10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px;margin:6px 0;background:var(--surface);font-size:.9rem}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--muted)}
+.dot.ok{background:var(--ok)}.dot.bad{background:var(--bad)}.dot.pend{background:var(--warn)}
+.num-in{width:96px}
+.inl{display:inline-flex;gap:6px;align-items:center;margin:4px 12px 4px 0;font-size:.88rem}
+.logt td,.logt th{padding:6px 10px;font-size:.84rem}
+.bar2{display:block;width:100%;height:auto}
+.mini{font-size:.82rem;color:var(--muted)}
+.big{font-family:var(--display);font-weight:700;font-size:1.3rem;font-variant-numeric:tabular-nums}
+.anom{border-left:4px solid var(--bad);background:var(--bad-bg);padding:10px 14px;border-radius:0 10px 10px 0;margin:10px 0}
+@media (max-width:900px){
+  .two{grid-template-columns:minmax(0,1fr)}
+  #view-doc nav#toc{top:calc(env(safe-area-inset-top,0px) + 96px)}
+  .transport{top:calc(env(safe-area-inset-top,0px) + 92px)}
+  .appbar{padding:8px 12px}
+  .sim{padding:12px 12px 70px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="appbar">
+  <div class="ab-title">Simulador de la planta de IncaPolymer Tech S.A.C.<small>Moldeo por soplado de rHDPE, refrigeración, recuperación de calor e Industria 4.0</small></div>
+  <div class="ab-tabs" role="tablist" aria-label="Vistas">
+    <button type="button" class="tabbtn on" data-view="sim">Simulador</button>
+    <button type="button" class="tabbtn" data-view="doc">Informe completo</button>
+  </div>
+  <button id="theme2" class="btn" type="button" aria-label="Cambiar tema claro u oscuro">Tema</button>
+</header>
+<div id="view-sim">
+<div class="sim" id="simroot">
+
+<div class="card transport" role="group" aria-label="Controles de simulación">
+  <button class="btn on" id="b-play" type="button">⏸ Pausar</button>
+  <button class="btn" id="b-reset" type="button">↺ Reiniciar</button>
+  <label>Velocidad <select id="sp" data-o2="P" data-key="speed"><option value="1">1×</option><option value="2" selected>2×</option><option value="5">5×</option><option value="10">10×</option></select></label>
+  <span class="hud">Fase: <b id="h-phase">—</b></span>
+  <span class="hud">t = <b id="h-t">0</b> s</span>
+  <span class="hud">Ciclos: <b id="h-n">0</b></span>
+  <span class="hud">Aceptados: <b id="h-acc">0</b></span>
+  <span class="hud">Rechazados: <b id="h-rej">0</b></span>
+  <span class="hud">Energía del compresor: <b id="h-e">0,000</b> kWh</span>
+  <span class="chip c-sim">Simulación con datos sintéticos</span>
+</div>
+
+<div class="mods" id="mods" role="tablist" aria-label="Módulos del simulador"></div>
+
+<!-- ================= M1 PLANTA ================= -->
+<div class="mod" id="m1">
+  <h2>Planta de moldeo por soplado de extrusión</h2>
+  <p class="kicker">El rHDPE se plastifica, el cabezal forma el parisón, el molde se cierra, el aire lo expande, se enfría, se extrae y se inspecciona (sección 4.2). Las duraciones de fase son valores de demostración editables; el informe no fija tiempos universales.</p>
+  <div class="two">
+    <div>
+      <div class="fig" style="margin-top:0">
+        <div id="plant-host"></div>
+        <div class="tl" id="tl" aria-label="Línea de tiempo del ciclo"></div>
+        <p class="figcap">Ciclo n.º <b id="m1-n">0</b> · Tiempo de ciclo: <b id="m1-tc">—</b> s · Fase: <b id="m1-ph">—</b> · T. del envase (modelo agrupado): <b id="m1-te">—</b> °C</p>
+      </div>
+    </div>
+    <div>
+      <div class="card"><h4>Duraciones de fase <span class="chip c-sup">Demostración</span></h4>
+        <div id="m1-sl"></div>
+        <label class="inl"><input type="checkbox" data-o2="P" data-key="useModel" checked> Usar el tiempo de enfriamiento calculado en el módulo 3</label>
+        <p class="mini">El tiempo de enfriamiento sale del modelo agrupado del molde; si se desactiva, se usa el valor manual.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="fig"><h4 style="margin-top:0">Flujo del proceso (etapa activa resaltada)</h4><div id="m1-flow"></div></div>
+
+  <div class="three">
+    <div class="card"><h4>Tabla 3. Parámetros críticos y lectura simulada</h4>
+      <div class="tw" style="margin:6px 0"><table id="m1-t3" style="min-width:0"></table></div>
+      <p class="mini">No se asignan temperaturas, presiones ni tiempos universales: el intervalo correcto depende del grado de rHDPE, la geometría, el espesor, el equipo y el producto. Las condiciones iniciales salen de la ficha del proveedor, ensayos de caracterización y pruebas controladas de soplado; luego se documenta una ventana operativa validada.</p></div>
+    <div class="card"><h4>4.2.1 Diagnóstico de defectos</h4>
+      <label class="inl">Defecto observado <select id="m1-def"></select></label>
+      <div id="m1-defout"></div>
+      <div class="note warn" style="margin-bottom:0">No todos los defectos tienen necesariamente una causa térmica: también pueden originarse por la materia prima, la geometría, el sistema de soplado o los parámetros de extrusión. Cada defecto debe correlacionarse con las variables registradas, sin atribuirse automáticamente al sistema frigorífico.</div></div>
+  </div>
+  <p class="figcap">Texto completo de la sección: <button class="btn" type="button" data-goto="#proceso">Abrir 4.2 en el informe</button></p>
+</div>
+
+<!-- ================= M2 REFRIGERACIÓN ================= -->
+<div class="mod" id="m2" hidden>
+  <h2>Refrigeración por compresión de vapor y recuperación de calor</h2>
+  <p class="kicker">Q̇<sub>L</sub> = ṁ<sub>w</sub> · c<sub>p,w</sub> · ΔT, COP<sub>R</sub> = Q̇<sub>L</sub> / Ẇ<sub>comp</sub>, Q̇<sub>H</sub> = Q̇<sub>L</sub> + Ẇ<sub>comp</sub>, Q̇<sub>rec</sub> = f<sub>rec</sub> · Q̇<sub>H</sub>. Todos los valores de entrada parten de los supuestos del informe.</p>
+  <div class="two">
+    <div>
+      <div class="fig" style="margin-top:0"><div id="m2-svg"></div>
+        <p class="figcap">Los puntos del refrigerante se desplazan más rápido con mayor Q̇<sub>L</sub>; los de agua, con mayor caudal másico. Temperaturas y potencias son las calculadas del escenario. <span id="scn-chip4" class="chip c-sup">Escenario del informe</span></p></div>
+    </div>
+    <div>
+      <div class="card"><h4>Tabla 4. Supuestos del circuito de agua <span class="chip c-sup">Supuesto</span></h4><div id="m2-sl1"></div>
+        <div id="m2-warn" class="note bad" hidden></div></div>
+      <div class="card" style="margin-top:12px"><h4>4.4.2 Recuperación <span class="chip c-sup">Supuesto de sensibilidad</span></h4><div id="m2-sl2"></div>
+        <div class="flow-sm" id="m2-pre"></div>
+        <button class="btn" id="m2-reset" type="button">Restablecer los supuestos del informe</button></div>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="l">Q̇<sub>L</sub> retirada</div><div class="v"><span data-o="QL" data-d="3"></span> <small>kW</small></div><span class="chip c-calc">Calculado</span></div>
+    <div class="kpi e"><div class="l">Ẇ<sub>comp</sub></div><div class="v"><span data-o="W" data-d="2"></span> <small>kW</small></div><span class="chip c-sup">Supuesto</span></div>
+    <div class="kpi g"><div class="l">COP<sub>R</sub></div><div class="v"><span data-o="COP" data-d="2"></span></div><span class="chip c-calc">Calculado</span></div>
+    <div class="kpi h"><div class="l">Q̇<sub>H</sub> rechazada</div><div class="v"><span data-o="QH" data-d="3"></span> <small>kW</small></div><span class="chip c-calc">Calculado</span></div>
+    <div class="kpi h"><div class="l">Q̇<sub>rec</sub></div><div class="v"><span data-o="Qrec" data-d="3"></span> <small>kW</small></div><span class="chip c-sup">f<sub>rec</sub> supuesta</span></div>
+    <div class="kpi"><div class="l">Calor disipado</div><div class="v"><span data-o="Qdis" data-d="3"></span> <small>kW</small></div><span class="chip c-calc">Calculado</span></div>
+    <div class="kpi"><div class="l">T<sub>salida</sub> secundaria</div><div class="v"><span data-o="Tsout" data-d="1"></span> <small>°C</small></div><span class="chip c-calc">Teórica</span></div>
+  </div>
+
+  <div class="two">
+    <div class="card"><h4>Balance en el condensador</h4><div id="m2-bars"></div>
+      <p class="mini">El COP calculado solo con la potencia del compresor es un indicador del ciclo bajo esa frontera de análisis; con bombas y ventiladores debe reportarse un COP del sistema con un denominador coherente. La expresión con entalpías (h₁ − h₄)/(h₂ − h₁) no se evalúa sin identificar el refrigerante y sus estados.</p></div>
+    <div class="card"><h4>Escenarios de sensibilidad</h4><div class="flow-sm" id="m2-sc"></div>
+      <div class="tw" style="margin:6px 0"><table id="m2-st" style="min-width:0"></table></div>
+      <p class="mini">Intermedio: valores del informe. Conservador y favorable: valores ilustrativos del simulador. Son escenarios de simulación, nunca resultados medidos.</p></div>
+  </div>
+
+  <h3>Coincidencia entre calor disponible y demanda de agua precalentada</h3>
+  <div class="two">
+    <div class="card"><h4>Perfil diario <span class="chip c-sup">Supuesto del simulador</span></h4>
+      <div id="m2-sl3"></div>
+      <div id="m2-day"></div>
+      <div class="res-box" id="m2-dayres"></div></div>
+    <div class="card"><h4>4.4.3 Criterios de viabilidad (deben cumplirse simultáneamente)</h4>
+      <div id="m2-crit"></div>
+      <div id="m2-eco"></div>
+      <div class="note warn" style="margin-bottom:0">Con datos supuestos el resultado es solo de simulación. La decisión final debe apoyarse en una medición del calor realmente transferido, no en el porcentaje supuesto.</div></div>
+  </div>
+
+  <details class="card" style="margin-top:14px"><summary><b>Memoria de cálculo en vivo</b></summary>
+    <p>Q̇<sub>L</sub> = <b data-o="mw" data-d="2"></b> kg/s × <b data-o="cp" data-d="2"></b> kJ/(kg·K) × (<b data-o="Tin" data-d="1"></b> − <b data-o="Tout" data-d="1"></b>) K = <b data-o="QL" data-d="3"></b> kW</p>
+    <p>COP<sub>R</sub> = <b data-o="QL" data-d="3"></b> / <b data-o="W" data-d="2"></b> = <b data-o="COP" data-d="2"></b></p>
+    <p>Q̇<sub>H</sub> = <b data-o="QL" data-d="3"></b> + <b data-o="W" data-d="2"></b> = <b data-o="QH" data-d="3"></b> kW</p>
+    <p>Q̇<sub>rec</sub> = <b data-o="fpct" data-d="0"></b> % × <b data-o="QH" data-d="3"></b> = <b data-o="Qrec" data-d="3"></b> kW</p>
+    <p>ΔT<sub>sec</sub> = <b data-o="Qrec" data-d="3"></b> / (<b data-o="ms" data-d="2"></b> × <b data-o="cps" data-d="2"></b>) = <b data-o="dTs" data-d="2"></b> °C → T<sub>salida</sub> = <b data-o="Tsout" data-d="1"></b> °C</p>
+  </details>
+  <p class="figcap">Texto completo: <button class="btn" type="button" data-goto="#termo">4.3 en el informe</button> <button class="btn" type="button" data-goto="#recup">4.4 en el informe</button></p>
+</div>
+
+<!-- ================= M3 MOLDE ================= -->
+<div class="mod" id="m3" hidden>
+  <h2>Molde: canales convencionales frente a canales conformados</h2>
+  <p class="kicker">El informe no afirma una mejora específica: la propuesta debe validarse con la geometría y las condiciones reales del molde de soplado. Por eso el factor de mejora parte en 1,00 (sin mejora) y es una hipótesis que usted fija.</p>
+  <div class="two">
+    <div class="card"><h4>Modelo agrupado de enfriamiento <span class="chip c-sup">Demostración</span></h4>
+      <p class="mini">T(t) = T<sub>refr</sub> + (T<sub>0</sub> − T<sub>refr</sub>)·e<sup>−t/τ</sup>. Es un modelo didáctico, no CFD. T<sub>refr</sub> es la temperatura de salida del evaporador del módulo 2 (<b data-o="Tout" data-d="1"></b> °C).</p>
+      <div id="m3-sl"></div>
+      <label class="inl">Configuración activa en la planta <select data-o2="P" data-key="cfg"><option value="conv">Convencional (canales rectos)</option><option value="conf">Conformado (LPBF)</option></select></label>
+    </div>
+    <div class="card"><h4>Comparación y criterio de éxito (4.5.5)</h4><div id="m3-cmp"></div></div>
+  </div>
+  <div class="fig"><h4 style="margin-top:0">Curvas de enfriamiento</h4><div id="m3-curve"></div>
+    <p class="figcap">La línea discontinua marca el criterio de extracción constante. Con el factor en 1,00 ambas curvas coinciden.</p></div>
+  <div class="two">
+    <div class="fig" style="margin-top:0"><h4 style="margin-top:0">Distancia canal–cavidad (esquema geométrico)</h4><div id="m3-geo"></div>
+      <p class="figcap">Ilustración didáctica de la sección; el color indica la distancia entre el canal más cercano y cada punto de la cavidad, no una temperatura. En los canales rectos la distancia varía según la forma del molde.</p></div>
+    <div>
+      <div class="card"><h4>Alternativas</h4>
+        <p><span class="chip c-med">A</span> <b>Canales rectos convencionales:</b> geometría más sencilla de mecanizar e inspeccionar; la distancia canal–cavidad puede variar.</p>
+        <p><span class="chip c-sim">B</span> <b>Canales conformados:</b> geometría interna adaptada a la cavidad; requiere verificar fabricabilidad, limpieza interna, resistencia mecánica, hermeticidad y pérdida de presión.</p>
+        <div class="note warn" style="margin-bottom:0">La literatura (Feng et al., 2021) sustenta evaluarlos, pero no permite afirmar de antemano una mejora porcentual; ventajas en inyección no se trasladan automáticamente al soplado de extrusión.</div></div>
+      <div class="card" style="margin-top:12px"><h4>Variables: simulación y comprobación física</h4>
+        <div class="tw" style="margin:6px 0"><table id="m3-vars" style="min-width:0"></table></div></div>
+    </div>
+  </div>
+  <div class="fig"><h4 style="margin-top:0">Secuencia de diseño, fabricación y validación</h4><div id="m3-flow"></div></div>
+  <p class="figcap"><button class="btn" type="button" data-goto="#aditiva">Abrir 4.5 en el informe</button></p>
+</div>
+
+<!-- ================= M4 IOT ================= -->
+<div class="mod" id="m4" hidden>
+  <h2>Sensores IoT, monitorización y gemelo digital</h2>
+  <p class="kicker">Los datos se generan en el simulador (sintéticos), con marca temporal y vinculados al lote de rHDPE y a la configuración del molde (4.6.1). Inyecte una falla para ver cómo la detecta el análisis de datos y cómo diverge el modelo.</p>
+  <div class="card"><h4>Fallas y condiciones de la medición</h4>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+      <button class="btn badb" type="button" data-flt="flow" aria-pressed="false">Caudal de refrigerante −30 %</button>
+      <button class="btn warnb" type="button" data-flt="temp" aria-pressed="false">Agua de entrada +5 K</button>
+      <button class="btn warnb" type="button" data-flt="drift" aria-pressed="false">Deriva del sensor de T molde</button>
+      <button class="btn" type="button" id="m4-clr">Quitar fallas</button>
+    </div>
+    <div id="m4-sl" style="margin-top:8px"></div>
+    <label class="inl">Lote de rHDPE <input type="text" data-o2="L" data-key="lot" value="LOTE-001" size="14"></label>
+    <span class="mini">Las fallas elevan la probabilidad de defecto como hipótesis didáctica del simulador.</span>
+  </div>
+  <div id="m4-alert"></div>
+  <div class="three" style="margin-top:12px">
+    <div><div class="chl">Temperatura del molde, medida (°C)</div><canvas class="ch" id="c-tm"></canvas></div>
+    <div><div class="chl">Diferencia de temperatura del refrigerante (K)</div><canvas class="ch" id="c-dt"></canvas></div>
+    <div><div class="chl">Diferencia de presión del circuito (kPa)</div><canvas class="ch" id="c-dp"></canvas></div>
+    <div><div class="chl">Potencia del compresor (kW)</div><canvas class="ch" id="c-pw"></canvas></div>
+  </div>
+  <h3>Indicadores de seguimiento</h3>
+  <div class="tw"><table id="m4-ind"></table></div>
+  <div class="two">
+    <div class="card"><h4>4.6.4 Gemelo digital: validación en tres niveles</h4><div id="m4-twin"></div></div>
+    <div class="card"><h4>Registro de desviaciones detectadas</h4><p class="mini">Cada ciclo se compara con la línea base de los ciclos previos (|z| &gt; 3). Se anotan marca temporal, lote y configuración.</p>
+      <div class="tw" style="margin:6px 0"><table class="logt" id="m4-log" style="min-width:0"></table></div></div>
+  </div>
+  <div class="card" style="margin-top:12px"><h4>Función de cada tecnología</h4>
+    <p><b>CAD</b> define la geometría de la cavidad, el inserto y los canales. <b>CFD y simulación térmica</b> estiman temperatura, flujo y pérdida de presión; su fiabilidad depende de condiciones de frontera, propiedades y malla. <b>Sensores IoT</b> deben elegirse por rango, precisión, respuesta y compatibilidad industrial. El <b>análisis de datos</b> relaciona condiciones, tiempo de ciclo, espesor y defectos. Un <b>gemelo digital</b> solo existe si el modelo se calibra y valida con datos reales: un CAD aislado o una simulación sin contraste experimental no lo son.</p></div>
+  <p class="figcap"><button class="btn" type="button" data-goto="#digital">Abrir 4.6 en el informe</button></p>
+</div>
+
+<!-- ================= M5 LOTE ================= -->
+<div class="mod" id="m5" hidden>
+  <h2>Recepción, caracterización y aprobación del lote de rHDPE</h2>
+  <p class="kicker">Primero se definen los límites de aceptación; después se ingresan los resultados de ensayo. Un lote no puede declararse apto sin límites previos. Los valores de demostración no son de ningún lote real ni equivalen a la ficha de Hostalen ACP 5231 D.</p>
+  <div class="card">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"><button class="btn" id="m5-demo" type="button">Cargar datos de demostración</button><button class="btn" id="m5-clr" type="button">Limpiar</button></div>
+    <div class="tw" style="margin:6px 0"><table id="m5-t" style="min-width:720px"></table></div>
+    <div id="m5-extra"></div>
+  </div>
+  <div class="two" style="margin-top:12px">
+    <div class="fig" style="margin-top:0"><h4 style="margin-top:0">Flujo de aprobación (ruta recorrida resaltada)</h4><div id="m5-flow"></div></div>
+    <div>
+      <div class="card"><h4>Resultado</h4><div id="m5-res"></div></div>
+      <div class="card" style="margin-top:12px"><h4>4.1.4 Riesgos asociados a lo ingresado</h4><div id="m5-risk"></div></div>
+      <div class="note" style="margin-top:12px">El número de réplicas (al menos cinco probetas de tracción) es una propuesta del proyecto, no un requisito universal de las normas. Los ensayos requieren laboratorio con equipos apropiados y personal competente; si el envase contactará alimentos, sustancias químicas o productos regulados, se añaden requisitos del uso final.</div>
+    </div>
+  </div>
+  <p class="figcap"><button class="btn" type="button" data-goto="#material">Abrir 4.1 en el informe</button></p>
+</div>
+
+<!-- ================= M6 VALIDACIÓN ================= -->
+<div class="mod" id="m6" hidden>
+  <h2>Validación y criterios de aceptación</h2>
+  <p class="kicker">El éxito no se define por instalar sensores, fabricar un inserto u obtener una simulación, sino por una comparación reproducible que conserve o mejore la calidad y ofrezca beneficios verificables.</p>
+  <div class="note bad">Los datos que genera este simulador son sintéticos: <b>no constituyen evidencia</b>. Cambie un estado a «Cumple el criterio» solo cuando disponga de mediciones reales.</div>
+  <div class="tw"><table id="m6-t"></table></div>
+  <p id="m6-res" class="figcap"></p>
+  <div class="note warn"><b>Alcance de los resultados:</b> el desarrollo establece un diseño de evaluación, un plan de ensayos y cálculos preliminares. No afirma que se haya fabricado el inserto, medido el COP, recuperado calor, reducido el tiempo de ciclo o disminuido la tasa de defectos. Esas conclusiones requieren ejecución experimental.</div>
+  <p class="figcap"><button class="btn" type="button" data-goto="#integracion">Abrir 4.7 en el informe</button> <button class="btn" type="button" data-goto="#refs">Referencias</button></p>
+</div>
+
+</div>
+
+</div>
+<div id="view-doc" hidden>
+<div class="layout">
+<nav id="toc" aria-label="Secciones del informe">
+  <div class="brand">IncaPolymer Tech S.A.C.<small>Dashboard del informe de Operaciones Industriales</small></div>
+  <a href="#resumen">Resumen</a>
+  <a href="#intro">Introducción</a>
+  <a href="#objetivos">3. Objetivos</a>
+  <a href="#material">4.1 Material rHDPE</a>
+  <a href="#proceso">4.2 Proceso y parámetros</a>
+  <a href="#termo">4.3 Sistema frigorífico</a>
+  <a href="#recup">4.4 Recuperación de calor</a>
+  <a href="#aditiva">4.5 Canales conformados</a>
+  <a href="#digital">4.6 Industria 4.0</a>
+  <a href="#integracion">4.7 Integración</a>
+  <a href="#refs">Referencias</a>
+  <button id="theme" type="button" aria-label="Cambiar tema claro u oscuro">Tema claro / oscuro</button>
+</nav>
+
+<main>
+
+<!-- ============ RESUMEN ============ -->
+<section id="resumen" class="hero">
+  <h1>Optimización termoenergética del moldeo por soplado de rHDPE</h1>
+  <p class="sub">Recuperación de calor y manufactura inteligente en IncaPolymer Tech S.A.C., empresa propuesta para el presente trabajo académico, dedicada a la transformación de polímeros reciclados en envases huecos para el sector agroindustrial peruano.</p>
+
+  <div class="legend" role="note" aria-label="Leyenda de etiquetas">
+    <span>Cómo leer cada cifra:</span>
+    <span class="chip c-sup">Supuesto</span> dato hipotético del informe
+    <span class="chip c-calc">Calculado</span> resultado de los supuestos
+    <span class="chip c-sim">Simulación</span> pendiente de CFD
+    <span class="chip c-med">Por medir</span> requiere ensayo
+    <span class="chip c-ok">Medido</span> dato real ingresado
+  </div>
+
+  <div class="note warn"><b>Principio del informe:</b> los números del ejemplo no son mediciones de IncaPolymer Tech S.A.C., ni especificaciones de un equipo adquirido, ni resultados experimentales. El informe no afirma que se haya fabricado el inserto, medido el COP, recuperado calor, reducido el tiempo de ciclo o disminuido la tasa de defectos.</div>
+
+  <p><span id="scn-chip" class="chip c-sup">Escenario del informe</span> Los indicadores y el diagrama siguientes se recalculan al modificar los supuestos en las secciones 4.3 y 4.4.</p>
+
+  <div class="kpis" id="kpis">
+    <div class="kpi"><div class="l">Potencia térmica retirada Q̇<sub>L</sub></div><div class="v"><span data-o="QL" data-d="3"></span> <small>kW</small></div><span class="chip c-calc">Calculado</span></div>
+    <div class="kpi e"><div class="l">Potencia del compresor Ẇ<sub>comp</sub></div><div class="v"><span data-o="W" data-d="2"></span> <small>kW</small></div><span class="chip c-sup">Supuesto</span></div>
+    <div class="kpi g"><div class="l">COP frigorífico</div><div class="v"><span data-o="COP" data-d="2"></span></div><span class="chip c-calc">Calculado</span></div>
+    <div class="kpi h"><div class="l">Calor rechazado Q̇<sub>H</sub></div><div class="v"><span data-o="QH" data-d="3"></span> <small>kW</small></div><span class="chip c-calc">Calculado</span></div>
+    <div class="kpi h"><div class="l">Calor recuperado Q̇<sub>rec</sub></div><div class="v"><span data-o="Qrec" data-d="3"></span> <small>kW</small></div><span class="chip c-sup">f<sub>rec</sub> supuesta</span></div>
+    <div class="kpi"><div class="l">T salida agua secundaria</div><div class="v"><span data-o="Tsout" data-d="1"></span> <small>°C</small></div><span class="chip c-calc">Teórica</span></div>
+  </div>
+
+  <div class="fig">
+    <h3 style="margin-top:0">Balance energético del condensador</h3>
+    <div id="sankey"></div>
+    <p class="figcap">El ancho de cada flujo es proporcional a su potencia (escala relativa al calor rechazado). Se cumple Q̇<sub>H</sub> = Q̇<sub>L</sub> + Ẇ<sub>comp</sub>; la fracción recuperada es un supuesto de sensibilidad, no un rendimiento demostrado.</p>
+  </div>
+</section>
+
+<!-- ============ INTRODUCCIÓN ============ -->
+<section id="intro">
+  <h2>Introducción</h2>
+  <p class="kicker">Contexto de la empresa, el proceso y la propuesta.</p>
+  <div class="grid2">
+    <div class="card"><h4>La empresa</h4><p>IncaPolymer Tech S.A.C. es una empresa industrial propuesta para el presente trabajo académico, dedicada a la transformación de polímeros reciclados para la fabricación de envases huecos destinados al sector agroindustrial peruano. Su línea se enfoca en envases de polietileno de alta densidad (HDPE) reciclado mediante moldeo por soplado de extrusión, tecnología que transforma el material termoplástico en productos huecos con geometrías definidas y características adecuadas para su aplicación industrial.</p></div>
+    <div class="card"><h4>El proceso de fabricación</h4>
+      <div class="flow-sm"><span class="s heat">HDPE reciclado se calienta y plastifica</span><i>→</i><span class="s">Se extruye el parisón (tubo)</span><i>→</i><span class="s">Entra al molde y se expande con aire comprimido</span><i>→</i><span class="s cold">Se enfría hasta la estabilidad dimensional</span><i>→</i><span class="s">Extracción</span></div>
+      <p>Estas operaciones demandan energía térmica y eléctrica, especialmente durante la plastificación del polímero y el enfriamiento del molde.</p></div>
+    <div class="card"><h4>Problema que se atiende</h4><p>El control de las condiciones de procesamiento es fundamental para mantener la calidad del producto, reducir el tiempo de ciclo y prevenir defectos como la <b>distribución irregular del espesor</b>, la <b>deformación dimensional</b> y el <b>enfriamiento no uniforme</b>.</p></div>
+    <div class="card"><h4>Propuesta termoenergética</h4><p>Evaluar la línea mediante un <b>sistema de refrigeración por compresión de vapor</b> y un <b>intercambiador de calor</b> que aproveche parte de la energía térmica disponible para precalentar agua de proceso. El análisis comprende la demanda térmica, el coeficiente de operación (COP) del sistema frigorífico y el calor recuperable, para determinar la viabilidad energética y su posible contribución a la reducción del consumo.</p></div>
+    <div class="card"><h4>Industria 4.0</h4><p>Sensores del Internet de las Cosas (IoT) para registrar variables críticas: temperatura del molde, temperatura del refrigerante, presión y tiempo de ciclo. La información podrá integrarse en un sistema de supervisión digital que facilite el seguimiento de las condiciones de operación e identifique desviaciones que afecten la calidad.</p></div>
+    <div class="card"><h4>Manufactura inteligente</h4><p><b>CAD</b> para modelar el molde y sus canales de refrigeración; <b>CFD</b> para analizar el flujo del refrigerante y la distribución de temperaturas; y un <b>gemelo digital</b> que compare las predicciones del modelo con los datos registrados. Permiten analizar condiciones de procesamiento e identificar zonas críticas antes de modificar la línea.</p></div>
+    <div class="card"><h4>Manufactura aditiva</h4><p>Fabricación de un <b>inserto metálico con canales de refrigeración conformados</b>, para estudiar si adaptar los canales a la geometría del molde mejora la distribución térmica y reduce el tiempo de enfriamiento frente a un sistema convencional. Indicadores: uniformidad de temperatura, tiempo de ciclo, caída de presión del refrigerante y posible aparición de defectos dimensionales. Los beneficios se determinarán mediante cálculos y simulaciones, sin asumir resultados no verificados experimentalmente.</p></div>
+    <div class="card"><h4>Síntesis del informe</h4><p>Integra la selección del rHDPE, el análisis de parámetros críticos del soplado, el estudio del ciclo de refrigeración por compresión de vapor y la viabilidad de recuperar calor residual, junto con tecnologías digitales, simulación térmica y manufactura aditiva. Se sustenta en fundamentos de ingeniería, balances energéticos y supuestos de cálculo claramente identificados, para establecer la viabilidad técnica y definir criterios de futura validación industrial.</p></div>
+  </div>
+</section>
+
+<!-- ============ OBJETIVOS ============ -->
+<section id="objetivos">
+  <h2>3. Objetivos</h2>
+  <div class="card" style="margin-top:16px"><h4>3.1 Objetivo general</h4><p>Evaluar una propuesta de optimización termoenergética del proceso de moldeo por soplado de polietileno de alta densidad (HDPE) reciclado en IncaPolymer Tech S.A.C., mediante el análisis del ciclo de refrigeración por compresión de vapor, la recuperación de calor residual y la incorporación de tecnologías digitales y manufactura aditiva, con la finalidad de mejorar la eficiencia energética, reducir el tiempo de ciclo y prevenir defectos de fabricación.</p></div>
+  <h3>3.2 Objetivos específicos</h3>
+  <div class="grid3">
+    <div class="card"><span class="chip c-med">Objetivo 1 · Sección 4.1 y 4.2</span><p>Analizar las propiedades térmicas y mecánicas del HDPE reciclado, así como los parámetros críticos del proceso de moldeo por soplado, para justificar la selección del material y establecer las condiciones de procesamiento requeridas para la fabricación de envases huecos.</p></div>
+    <div class="card"><span class="chip c-med">Objetivo 2 · Secciones 4.3 y 4.4</span><p>Determinar el desempeño energético del sistema de refrigeración por compresión de vapor mediante el cálculo de la carga térmica y del COP, así como estimar el potencial de recuperación de calor residual para evaluar su aprovechamiento en el precalentamiento de agua de proceso.</p></div>
+    <div class="card"><span class="chip c-med">Objetivo 3 · Secciones 4.5 y 4.6</span><p>Proponer la integración de tecnologías digitales y manufactura aditiva mediante sensores IoT, herramientas de simulación térmica y canales de refrigeración conformados, para comparar el comportamiento térmico del proceso convencional con la alternativa mejorada e identificar oportunidades de reducción del tiempo de enfriamiento y de los defectos de fabricación.</p></div>
+  </div>
+  <div class="note">El desarrollo analiza el proceso con HDPE reciclado, las condiciones de operación y la demanda energética asociada al moldeo por soplado de extrusión; evalúa la viabilidad de recuperar parte del calor rechazado por el sistema de refrigeración; plantea mejoras con tecnologías digitales, simulación térmica y manufactura aditiva; y establece indicadores para comparar el proceso convencional con las alternativas propuestas.</div>
+</section>
+
+<!-- ============ MATERIAL ============ -->
+<section id="material">
+  <h2>4.1 Material seleccionado y justificación técnica</h2>
+  <p class="kicker">Polietileno de alta densidad reciclado (rHDPE) para moldeo por soplado de extrusión.</p>
+  <p>La selección definitiva deberá condicionarse a que el lote cumpla los requisitos de procesabilidad, resistencia mecánica, estabilidad dimensional y calidad exigidos al envase. El HDPE es técnicamente pertinente porque es un termoplástico que puede fundirse, extruirse y conformarse mediante soplado.</p>
+  <div class="note warn">Que un material sea HDPE reciclado no garantiza el mismo comportamiento que una resina virgen: su desempeño depende del origen del residuo, la mezcla de grados, los ciclos térmicos previos, los contaminantes, los aditivos y el historial de degradación. Por eso IncaPolymer Tech S.A.C. no debe fijar las condiciones de producción basándose exclusivamente en una ficha comercial de HDPE virgen: primero debe caracterizar el rHDPE disponible y realizar pruebas de conformado.</div>
+
+  <h3>Criterios de selección</h3>
+  <div class="grid3" id="criterios"></div>
+
+  <h3>4.1.2 Referencia comercial y límite de su aplicación</h3>
+  <p>Ficha técnica del grado comercial <b>Hostalen ACP 5231 D</b> (LyondellBasell). Estos datos corresponden a ese grado y <b>no son resultados de ensayo del rHDPE propuesto</b>; sirven solo como referencia del orden de magnitud de un HDPE comercial para soplado.</p>
+  <div class="kpis">
+    <div class="kpi h"><div class="l">Densidad</div><div class="v">0,952 <small>g/cm³</small></div><span class="chip c-ref">Referencia comercial</span></div>
+    <div class="kpi h"><div class="l">Índice de fluidez (190 °C, 2,16 kg)</div><div class="v">0,30 <small>g/10 min</small></div><span class="chip c-ref">Referencia comercial</span></div>
+    <div class="kpi h"><div class="l">Módulo de tracción</div><div class="v">1100 <small>MPa</small></div><span class="chip c-ref">Referencia comercial</span></div>
+    <div class="kpi h"><div class="l">Tensión de fluencia</div><div class="v">25 <small>MPa</small></div><span class="chip c-ref">Referencia comercial</span></div>
+  </div>
+  <p>El rHDPE deberá evaluarse de manera independiente. No sería correcto asignarle automáticamente esos valores ni emplearlos como criterios de aceptación sin verificar que sean apropiados para la formulación, el envase y sus condiciones de servicio.</p>
+
+  <h3>Métodos de ensayo para caracterizar el rHDPE</h3>
+  <p>Plan de caracterización: las normas citadas identifican los métodos que se propone utilizar; no significa que las pruebas ya se hayan ejecutado. ASTM D1238 es apropiada para medir el índice de fluidez y se utiliza en control de calidad, pero la propia norma advierte que el resultado no representa por sí solo la uniformidad de las demás propiedades del polímero.</p>
+  <div class="tw"><table id="t-ensayos"></table></div>
+  <p class="figcap">Las páginas oficiales de ASTM identifican D792 como método de densidad por desplazamiento y D638 como método de propiedades de tracción. ISO 11357-3:2025 especifica la determinación de temperaturas y entalpías de fusión y cristalización. ASTM D1693 corresponde al agrietamiento por esfuerzo ambiental de plásticos de etileno. El estado de cada ensayo es editable y parte en «Planificado».</p>
+
+  <h4>Condiciones para ejecutar los ensayos</h4>
+  <div id="ck-condiciones"></div>
+  <div class="note">El número de réplicas es una propuesta de control para el proyecto, no un requisito universal de las normas citadas. Los ensayos deben ejecutarse en un laboratorio con equipos apropiados y personal competente. Si el envase va a entrar en contacto con alimentos, sustancias químicas o productos regulados, deberán añadirse los requisitos específicos aplicables al uso final.</div>
+
+  <h3>4.1.4 Relación entre propiedades, conformado y defectos</h3>
+  <div class="tw"><table id="t-relacion"></table></div>
+
+  <div class="fig"><h4 style="margin-top:0">Flujo de recepción, caracterización y aprobación del rHDPE</h4><div id="f-lote"></div></div>
+</section>
+
+<!-- ============ PROCESO ============ -->
+<section id="proceso">
+  <h2>4.2 Proceso de fabricación y parámetros críticos</h2>
+  <p class="kicker">Moldeo por soplado de extrusión, adecuado para formar piezas huecas.</p>
+  <p>La extrusora funde y transporta el polímero, la matriz forma el parisón, el molde se cierra alrededor de este y el aire de soplado lo expande contra la superficie interna del molde. Después, el envase se enfría, se extrae y se inspecciona.</p>
+  <div class="fig"><div id="f-proceso"></div><p class="figcap"><span class="chip c-ref">naranja</span> etapa con alta demanda de energía térmica (plastificación) · <span class="chip c-calc">azul</span> enfriamiento del molde, donde actúa el sistema frigorífico.</p></div>
+
+  <div class="tw"><table id="t-params"></table></div>
+  <div class="note warn">No se asignan temperaturas, presiones ni tiempos universales porque el intervalo correcto depende del grado de rHDPE, la geometría, el espesor, el equipo y el producto. Las condiciones iniciales deben determinarse mediante la ficha del proveedor, ensayos de caracterización y pruebas controladas de soplado; después se documentará una ventana operativa validada.</div>
+
+  <h3>4.2.1 Defectos que deben identificarse</h3>
+  <div class="flow-sm" id="defectos"></div>
+  <p>No todos estos defectos tienen necesariamente una causa térmica: también pueden originarse por la materia prima, la geometría, el sistema de soplado o los parámetros de extrusión. Por ello el análisis debe correlacionar cada defecto con las variables registradas.</p>
+  <div class="note">Ejemplo: una deformación observada después de la extracción debe investigarse junto con la distribución de temperatura del molde, el tiempo de enfriamiento y las dimensiones del envase, en lugar de atribuirse automáticamente al sistema frigorífico.</div>
+</section>
+
+<!-- ============ TERMO ============ -->
+<section id="termo">
+  <h2>4.3 Análisis termodinámico del sistema frigorífico</h2>
+  <h3 style="margin-top:1rem">4.3.1 Justificación de la selección</h3>
+  <p>Se propone un sistema de refrigeración por compresión de vapor para retirar calor del circuito de agua que enfría el molde. Está compuesto por evaporador, compresor, condensador y válvula de expansión.</p>
+  <div class="grid2">
+    <div class="card"><h4>Cómo opera el ciclo</h4>
+      <p><b>Evaporador:</b> el refrigerante absorbe calor del agua de proceso.<br><b>Compresor:</b> eleva la presión y temperatura.<br><b>Condensador:</b> rechaza calor al ambiente o a un circuito de recuperación.<br><b>Válvula de expansión:</b> reduce la presión y cierra el ciclo.</p></div>
+    <div class="card"><h4>Por qué este sistema</h4><p>Permite controlar la temperatura del refrigerante independientemente de las fluctuaciones de la temperatura ambiente, dentro de la capacidad del equipo. La evaluación debe considerar el consumo eléctrico del compresor y, en una evaluación industrial completa, el consumo de bombas y ventiladores. ASHRAE define el coeficiente de operación frigorífica como la relación entre el calor retirado y la energía suministrada al ciclo.</p></div>
+  </div>
+  <div class="fig"><h4 style="margin-top:0">Figura 2. Ciclo de refrigeración por compresión de vapor</h4><div id="f-ciclo"></div></div>
+
+  <h3>Ecuaciones del ciclo</h3>
+  <div class="eq">COP<sub>R</sub> = <span class="frac"><span>Q̇<sub>L</sub></span><span>Ẇ<sub>comp</sub></span></span>
+    <span class="d">COP<sub>R</sub>: coeficiente de operación frigorífica, adimensional · Q̇<sub>L</sub>: capacidad de refrigeración, en kW · Ẇ<sub>comp</sub>: potencia suministrada al compresor, en kW.</span></div>
+  <div class="eq">COP<sub>R</sub> = <span class="frac"><span>h<sub>1</sub> − h<sub>4</sub></span><span>h<sub>2</sub> − h<sub>1</sub></span></span>
+    <span class="d">Análisis idealizado de los cuatro estados mediante las entalpías específicas del refrigerante. Presupone el modelo de ciclo de compresión de vapor; las entalpías deben obtenerse del refrigerante seleccionado y de las condiciones de operación. No se calculará un COP mediante entalpías sin identificar el refrigerante y sus estados termodinámicos (por eso el dashboard no la evalúa numéricamente).</span></div>
+  <div class="eq">Q̇<sub>L</sub> = ṁ<sub>w</sub> · c<sub>p,w</sub> · (T<sub>entrada</sub> − T<sub>salida</sub>)
+    <span class="d">ṁ<sub>w</sub>: caudal másico de agua en kg/s · c<sub>p,w</sub>: calor específico en kJ/(kg·K). Con kg/s y kJ/(kg·K) el resultado se obtiene en kW.</span></div>
+  <div class="eq">Q̇<sub>H</sub> = Q̇<sub>L</sub> + Ẇ<sub>comp</sub>
+    <span class="d">Balance simplificado en el condensador. Aplica al ciclo en régimen estacionario, despreciando cambios de energía cinética y potencial y otras pérdidas externas no incluidas en el modelo. En una instalación real los balances deben usar mediciones consistentes y delimitar qué consumos y transferencias de calor se incluyen.</span></div>
+
+  <h3>Ejemplo numérico preliminar: cálculo con supuestos explícitos</h3>
+  <div class="note warn">Los números son supuestos de cálculo para ilustrar el método, no mediciones de IncaPolymer Tech S.A.C., ni especificaciones de un equipo adquirido ni resultados experimentales.</div>
+  <div class="card">
+    <h4>Tabla 4. Datos hipotéticos del balance energético <span class="chip c-sup">Supuesto</span> <span id="scn-chip2" class="chip c-sup">Escenario del informe</span></h4>
+    <div id="sl-termo"></div>
+    <div style="margin-top:10px"><button class="btn" id="reset-all" type="button">Restablecer todos los supuestos del informe</button></div>
+    <div id="warn-termo" class="note bad" hidden></div>
+  </div>
+
+  <div class="step"><b>Paso 1. Calcular la potencia térmica retirada del agua.</b><br>
+    Q̇<sub>L</sub> = ṁ<sub>w</sub> · c<sub>p,w</sub> · ΔT = <b class="r" data-o="mw" data-d="2"></b> kg/s × <b class="r" data-o="cp" data-d="2"></b> kJ/(kg·K) × (<b class="r" data-o="Tin" data-d="1"></b> − <b class="r" data-o="Tout" data-d="1"></b>) K
+    <div class="res">Q̇<sub>L</sub> = <span data-o="QL" data-d="3"></span> kW</div>
+    <div class="figcap">Con los supuestos del informe: 5,225 kW. Es una estimación calculada a partir de los supuestos de la tabla.</div></div>
+  <div class="step"><b>Paso 2. Calcular el COP frigorífico del escenario.</b><br>
+    COP<sub>R</sub> = <b class="r" data-o="QL" data-d="3"></b> kW ÷ <b class="r" data-o="W" data-d="2"></b> kW
+    <div class="res">COP<sub>R</sub> = <span data-o="COP" data-d="2"></span></div>
+    <div class="figcap">Con los supuestos del informe: 2,90. Es el resultado matemático del escenario hipotético; no demuestra que un equipo real vaya a alcanzar ese desempeño. Para confirmarlo se requieren mediciones de la potencia frigorífica y del consumo eléctrico durante una condición operativa definida.</div></div>
+  <div class="step"><b>Paso 3. Estimar el calor rechazado en el condensador.</b><br>
+    Q̇<sub>H</sub> = Q̇<sub>L</sub> + Ẇ<sub>comp</sub> = <b class="r" data-o="QL" data-d="3"></b> + <b class="r" data-o="W" data-d="2"></b>
+    <div class="res">Q̇<sub>H</sub> = <span data-o="QH" data-d="3"></span> kW</div>
+    <div class="figcap">Con los supuestos del informe: 7,025 kW. Este valor no es el calor que necesariamente podrá recuperarse: la fracción útil dependerá de la temperatura del condensador, del caudal disponible, del intercambiador, de las pérdidas y de la coincidencia temporal entre la generación de calor y la demanda de agua caliente.</div></div>
+
+  <h3>Qué falta para validar el desempeño del sistema</h3>
+  <p>El cálculo preliminar permite dimensionar un escenario de estudio, pero no sustituye la selección del equipo ni una prueba de funcionamiento. Para validar el COP real será necesario registrar, como mínimo:</p>
+  <div id="ck-validar"></div>
+  <div class="note">El COP calculado solo con la potencia del compresor representa un indicador del ciclo bajo esa frontera de análisis. Si se incluyen los consumos auxiliares, debe reportarse un COP del sistema con un denominador coherente.</div>
+</section>
+
+<!-- ============ RECUPERACIÓN ============ -->
+<section id="recup">
+  <h2>4.4 Viabilidad de la recuperación de calor</h2>
+  <h3 style="margin-top:1rem">4.4.1 Propuesta de integración térmica</h3>
+  <p>Se propone evaluar un intercambiador de calor que aproveche una parte del calor rechazado por el condensador para precalentar agua destinada a un uso auxiliar compatible con la temperatura alcanzada. El agua precalentada no se considerará apta para cualquier uso por defecto: su aplicación deberá definirse según los requisitos de higiene, calidad del agua, temperatura y seguridad del proceso.</p>
+  <div class="fig"><h4 style="margin-top:0">Figura 3. Esquema conceptual de recuperación de calor</h4><div id="f-recup"></div></div>
+  <div class="note">La recuperación no elimina la necesidad del condensador ni debe interferir con la capacidad frigorífica requerida para el molde. La solución deberá permitir que el sistema disipe el calor que no pueda aprovecharse y mantener las condiciones de presión y temperatura exigidas por el equipo.</div>
+
+  <h3>4.4.2 Cálculo de un escenario de recuperación</h3>
+  <p>Se supone, únicamente para este ejemplo, que puede aprovecharse el 70 % del calor calculado en el condensador. El 70 % no es un dato medido ni un rendimiento demostrado del intercambiador: es un supuesto de sensibilidad que deberá reemplazarse por datos de diseño o ensayos.</p>
+  <div class="eq">Q̇<sub>rec</sub> = f<sub>rec</sub> · Q̇<sub>H</sub> <span class="d">f<sub>rec</sub>: fracción supuesta de recuperación.</span></div>
+  <div class="eq">ΔT<sub>sec</sub> = <span class="frac"><span>Q̇<sub>rec</sub></span><span>ṁ<sub>sec</sub> · c<sub>p</sub></span></span> <span class="d">T<sub>salida</sub> = T<sub>entrada,sec</sub> + ΔT<sub>sec</sub></span></div>
+  <div class="card">
+    <h4>Supuestos del circuito secundario <span class="chip c-sup">Supuesto</span> <span id="scn-chip3" class="chip c-sup">Escenario del informe</span></h4>
+    <div id="sl-recup"></div>
+    <p class="figcap">Calor recuperado del escenario: <span class="val" data-o="Qrec" data-d="3"></span> kW (informe: 4,918 kW).</p>
+  </div>
+  <div class="step"><b>Resultado del escenario</b><br>
+    Q̇<sub>rec</sub> = <b class="r" data-o="fpct" data-d="0"></b> % × <b class="r" data-o="QH" data-d="3"></b> kW = <b data-o="Qrec" data-d="3"></b> kW<br>
+    ΔT<sub>sec</sub> = <b class="r" data-o="Qrec" data-d="3"></b> ÷ (<b class="r" data-o="ms" data-d="2"></b> × <b class="r" data-o="cps" data-d="2"></b>) = <b data-o="dTs" data-d="2"></b> °C
+    <div class="res">T<sub>salida</sub> = <span data-o="Tsin" data-d="0"></span> + <span data-o="dTs" data-d="2"></span> ≈ <span data-o="Tsout" data-d="1"></span> °C</div>
+    <div class="figcap">Con los supuestos del informe: Q̇<sub>rec</sub> = 4,918 kW, ΔT<sub>sec</sub> = 11,77 °C y T<sub>salida</sub> ≈ 31,8 °C. Es una temperatura teórica en un escenario hipotético, no una medición. Supone que el calor estimado se transfiere sin pérdidas adicionales; en el diseño real la transferencia estará limitada por la diferencia de temperatura entre fluidos, el área y la efectividad del intercambiador, la resistencia térmica y las condiciones de operación.</div></div>
+
+  <h4>Escenarios de sensibilidad (conservador, intermedio y favorable)</h4>
+  <p>El informe recomienda evaluar los tres modificando la fracción recuperable y el caudal secundario, e identificarlos siempre como escenarios de simulación, nunca como resultados medidos. El intermedio usa los valores del informe; los valores del conservador y del favorable son <b>ilustrativos del dashboard</b>, no del informe.</p>
+  <div class="flow-sm" id="presets"></div>
+  <div class="tw"><table id="t-escenarios"></table></div>
+
+  <h3>4.4.3 Criterios para decidir si la recuperación es viable</h3>
+  <p>Se considerará técnicamente viable solo si cumple <b>simultáneamente</b> estas condiciones:</p>
+  <div id="ck-viable"></div>
+  <div class="note warn">La decisión final debe apoyarse en una medición del calor realmente transferido, no en el porcentaje supuesto.</div>
+
+  <h3>4.4.4 Indicadores para evaluar el beneficio</h3>
+  <div class="tw"><table id="t-benef"></table></div>
+  <div class="note">La recuperación térmica debe presentarse como una propuesta de mejora por validar, no como un ahorro ya conseguido.</div>
+</section>
+
+<!-- ============ ADITIVA ============ -->
+<section id="aditiva">
+  <h2>4.5 Manufactura aditiva y canales de enfriamiento conformados</h2>
+  <h3 style="margin-top:1rem">4.5.1 Propuesta de mejora del molde</h3>
+  <p>Se propone evaluar un inserto metálico con canales de enfriamiento conformados, diseñados para seguir de forma más próxima la geometría de la cavidad que los canales rectos convencionales. El propósito es mejorar la distribución de temperatura y la transferencia de calor, reducir diferencias térmicas entre zonas y, potencialmente, disminuir el tiempo de enfriamiento.</p>
+  <p>La fabricación mediante fusión de lecho de polvo por láser (LPBF) permitiría producir geometrías internas complejas difíciles de fabricar por mecanizado convencional. La revisión de Feng, Kamat y Pei (2021) explica que el desempeño de los canales conformados depende de la geometría, posición y dimensiones de los canales, además de la transferencia de calor y la pérdida de presión.</p>
+  <div class="note warn">Esta literatura sustenta la propuesta de evaluarlos, pero no permite afirmar de antemano una mejora porcentual específica en el molde de este proyecto. La evidencia incluye aplicaciones de moldeo por inyección y otros contextos; cualquier ventaja obtenida en un molde de inyección no debe trasladarse automáticamente al moldeo por soplado de extrusión. La propuesta deberá validarse con la geometría y las condiciones reales del molde de soplado.</div>
+
+  <h3>Comparación conceptual</h3>
+  <div class="grid2">
+    <div class="card"><span class="chip c-med">Alternativa A</span><h4>Canales rectos convencionales</h4><p>Geometría más sencilla de mecanizar e inspeccionar. La distancia entre el canal y la superficie de la cavidad puede variar según la forma del molde.</p></div>
+    <div class="card"><span class="chip c-sim">Alternativa B</span><h4>Canales conformados</h4><p>Geometría interna adaptada a la cavidad. Requiere verificar fabricabilidad, limpieza interna, resistencia mecánica, hermeticidad y pérdida de presión.</p></div>
+  </div>
+
+  <h3>Secuencia de diseño, fabricación y validación</h3>
+  <div class="fig"><div id="f-aditiva"></div></div>
+
+  <h3>4.5.4 Variables de simulación y comprobación</h3>
+  <div class="tw"><table id="t-vars"></table></div>
+
+  <h3>4.5.5 Cómo se comprobará si la mejora funciona</h3>
+  <p>La comparación entre el molde convencional y el molde con canales conformados debe realizarse manteniendo, en la medida de lo posible, las mismas condiciones de material, geometría del envase, consigna de proceso, presión de soplado, temperatura de refrigerante y criterio de extracción. Se recomienda registrar varios ciclos por configuración.</p>
+  <div class="eq">Δt<sub>c</sub> = t<sub>c,conv</sub> − t<sub>c,conf</sub></div>
+  <div class="eq">% reducción del tiempo = <span class="frac"><span>t<sub>c,conv</sub> − t<sub>c,conf</sub></span><span>t<sub>c,conv</sub></span></span> × 100
+    <span class="d">t<sub>c,conv</sub>: tiempo de ciclo con el molde convencional · t<sub>c,conf</sub>: tiempo con canales conformados. Estas ecuaciones definen cómo se calculará la mejora; no aportan por sí mismas un resultado numérico.</span></div>
+  <div class="card">
+    <h4>Calculadora de tiempo de ciclo <span class="chip c-med">Por medir</span></h4>
+    <p class="figcap">Permanece vacía hasta contar con datos medidos, para no sugerir mejoras no verificadas.</p>
+    <label>t<sub>c,conv</sub> (s) <input type="number" id="tc1" step="any" min="0" placeholder="vacío"></label>
+    &nbsp; <label>t<sub>c,conf</sub> (s) <input type="number" id="tc2" step="any" min="0" placeholder="vacío"></label>
+    <div class="res-box" id="tc-out">Ingrese ambos tiempos para calcular Δt<sub>c</sub> y el % de reducción.</div>
+  </div>
+  <p>También deben compararse la dispersión de las dimensiones, el espesor de pared, la tasa de defectos y el consumo energético por envase.</p>
+  <div class="note bad">Una reducción del tiempo de enfriamiento no se considerará exitosa si empeora la calidad del producto, incrementa la pérdida de presión o exige un consumo auxiliar mayor que anule el beneficio.</div>
+</section>
+
+<!-- ============ DIGITAL ============ -->
+<section id="digital">
+  <h2>4.6 Integración de tecnologías digitales e Industria 4.0</h2>
+  <h3 style="margin-top:1rem">4.6.1 Arquitectura de monitorización propuesta</h3>
+  <p>La integración digital permitirá registrar las variables del proceso y contrastarlas con las simulaciones térmicas y de flujo. Se propone instalar sensores para temperatura del molde, temperaturas de entrada y salida del refrigerante, caudal, presión, duración del ciclo y consumo eléctrico. Los datos se almacenarán con una marca temporal y se vincularán a la identificación del lote de rHDPE y a la configuración del molde.</p>
+  <div class="fig"><h4 style="margin-top:0">Figura 5. Arquitectura de adquisición, simulación y mejora continua</h4><div id="f-arq"></div></div>
+
+  <h3>4.6.2 Función de cada tecnología</h3>
+  <div class="grid3" id="tecnologias"></div>
+
+  <h3>Indicadores de seguimiento</h3>
+  <p>Puede registrar un valor medido y un criterio de aceptación; hasta entonces cada indicador permanece «Por medir».</p>
+  <div class="tw"><table id="t-ind"></table></div>
+  <div class="note">Los indicadores se utilizarán para comparar configuraciones, detectar desviaciones y validar mejoras. Antes de analizar datos se establecerán los criterios de aceptación, las condiciones comparables y el procedimiento para tratar valores faltantes o mediciones atípicas.</div>
+
+  <h4>Calculadoras de indicadores</h4>
+  <div class="grid3" id="calc-ind"></div>
+
+  <h3>4.6.4 Validación de las predicciones digitales</h3>
+  <p>La validación debe separar tres niveles:</p>
+  <div class="grid3">
+    <div class="card"><span class="chip c-sim">Nivel 1</span><h4>Verificación del modelo</h4><p>Comprobar que la geometría, las propiedades y las condiciones de frontera se implementaron correctamente y que la solución numérica es suficientemente estable.</p></div>
+    <div class="card"><span class="chip c-sim">Nivel 2</span><h4>Calibración</h4><p>Ajustar parámetros del modelo utilizando un conjunto de mediciones reales.</p></div>
+    <div class="card"><span class="chip c-sim">Nivel 3</span><h4>Validación independiente</h4><p>Comparar las predicciones con otro conjunto de mediciones no empleado en la calibración.</p></div>
+  </div>
+  <div class="eq">MAE = <span class="frac"><span>1</span><span>n</span></span> Σ<sub>i=1</sub><sup>n</sup> | y<sub>i</sub> − ŷ<sub>i</sub> | &nbsp;&nbsp;&nbsp; MAPE = <span class="frac"><span>100</span><span>n</span></span> Σ<sub>i=1</sub><sup>n</sup> | <span class="frac"><span>y<sub>i</sub> − ŷ<sub>i</sub></span><span>y<sub>i</sub></span></span> |
+    <span class="d">y<sub>i</sub> representa una medición y ŷ<sub>i</sub> la predicción correspondiente. El MAPE no debe emplearse cuando los valores medidos sean cero o cercanos a cero; en esos casos se informarán métricas absolutas apropiadas. Los errores solo podrán calcularse después de disponer de mediciones y predicciones emparejadas.</span></div>
+  <div class="card">
+    <h4>Calculadora MAE y MAPE <span class="chip c-med">Por medir</span></h4>
+    <p class="figcap">Separe los valores con espacios, punto y coma o saltos de línea. Debe ingresar el mismo número de mediciones y predicciones.</p>
+    <div class="grid2">
+      <label>Mediciones y<sub>i</sub><textarea id="mae-y" placeholder="vacío"></textarea></label>
+      <label>Predicciones ŷ<sub>i</sub><textarea id="mae-p" placeholder="vacío"></textarea></label>
+    </div>
+    <div class="res-box" id="mae-out">Sin datos emparejados todavía.</div>
+  </div>
+</section>
+
+<!-- ============ INTEGRACIÓN ============ -->
+<section id="integracion">
+  <h2>4.7 Integración de la propuesta y criterios de aceptación</h2>
+  <p class="kicker">Cuatro componentes relacionados.</p>
+  <div class="grid2">
+    <div class="card"><span class="chip c-med">1 · Material</span><p>Caracterizar el rHDPE y definir criterios de recepción antes de autorizar el lote para producción.</p></div>
+    <div class="card"><span class="chip c-med">2 · Proceso térmico</span><p>Controlar la refrigeración del molde y estimar el COP a partir de datos medidos y balances consistentes.</p></div>
+    <div class="card"><span class="chip c-med">3 · Recuperación de calor</span><p>Comprobar la disponibilidad de calor útil, la demanda receptora y la conveniencia económica.</p></div>
+    <div class="card"><span class="chip c-med">4 · Mejora digital y manufactura aditiva</span><p>Diseñar y evaluar canales conformados, simular su comportamiento y comparar el prototipo con el molde de referencia.</p></div>
+  </div>
+  <div class="note">El éxito no se definirá por la sola instalación de sensores, la fabricación de un inserto o la obtención de un resultado de simulación. La mejora deberá demostrar, mediante una comparación reproducible, que conserva o mejora la calidad del envase y que ofrece beneficios verificables en tiempo de ciclo, uniformidad térmica o consumo energético.</div>
+
+  <h3>Tabla 8. Matriz de validación de la propuesta</h3>
+  <div class="tw"><table id="t-matriz"></table></div>
+  <p id="matriz-res" class="figcap"></p>
+
+  <div class="note warn"><b>Alcance de los resultados:</b> el presente desarrollo establece un diseño de evaluación, un plan de ensayos y cálculos preliminares. No afirma que se haya fabricado el inserto, medido el COP, recuperado calor, reducido el tiempo de ciclo o disminuido la tasa de defectos. Esas conclusiones requieren ejecución experimental.</div>
+</section>
+
+<!-- ============ REFERENCIAS ============ -->
+<section id="refs">
+  <h2>Referencias bibliográficas (APA 7)</h2>
+  <p class="kicker">Cubren los métodos de ensayo del rHDPE, el ciclo frigorífico, la recuperación de calor y la manufactura aditiva. Las normas se citan con su identificación y edición; para ejecutar ensayos formales se debe disponer del texto normativo completo aplicable.</p>
+  <ol class="refs">
+    <li>American Society of Heating, Refrigerating and Air-Conditioning Engineers. (2021). Thermodynamics and refrigeration cycles. En <i>2021 ASHRAE Handbook—Fundamentals</i>, capítulo 2. <a href="https://handbook.ashrae.org/Handbooks/F21/SI/F21_Ch02/F21_Ch02_si.aspx" target="_blank" rel="noopener">https://handbook.ashrae.org/Handbooks/F21/SI/F21_Ch02/F21_Ch02_si.aspx</a></li>
+    <li>ASTM International. (2020). <i>Standard test methods for density and specific gravity (relative density) of plastics by displacement</i> (ASTM D792-20). <a href="https://store.astm.org/d0792-20.html" target="_blank" rel="noopener">https://store.astm.org/d0792-20.html</a></li>
+    <li>ASTM International. (2022). <i>Standard test method for tensile properties of plastics</i> (ASTM D638-22). <a href="https://store.astm.org/d0638-22.html" target="_blank" rel="noopener">https://store.astm.org/d0638-22.html</a></li>
+    <li>ASTM International. (2025). <i>Standard test method for density of plastics by the density-gradient technique</i> (ASTM D1505-25). <a href="https://store.astm.org/standards/d1505" target="_blank" rel="noopener">https://store.astm.org/standards/d1505</a></li>
+    <li>ASTM International. (2026). <i>Standard test method for melt flow rates of thermoplastics by extrusion plastometer</i> (ASTM D1238-26). <a href="https://store.astm.org/standards/d1238" target="_blank" rel="noopener">https://store.astm.org/standards/d1238</a></li>
+    <li>ASTM International. (2021). <i>Standard test method for environmental stress-cracking of ethylene plastics</i> (ASTM D1693-21). <a href="https://store.astm.org/d1693-21.html" target="_blank" rel="noopener">https://store.astm.org/d1693-21.html</a></li>
+    <li>Feng, S., Kamat, A. M., &amp; Pei, Y. (2021). Design and fabrication of conformal cooling channels in molds: Review and progress updates. <i>International Journal of Heat and Mass Transfer, 171</i>, Article 121082. <a href="https://doi.org/10.1016/j.ijheatmasstransfer.2021.121082" target="_blank" rel="noopener">https://doi.org/10.1016/j.ijheatmasstransfer.2021.121082</a></li>
+    <li>International Organization for Standardization. (2025). <i>Plastics—Differential scanning calorimetry (DSC)—Part 3: Determination of temperature and enthalpy of melting and crystallization</i> (ISO 11357-3:2025). <a href="https://www.iso.org/standard/11357-3" target="_blank" rel="noopener">https://www.iso.org/standard/11357-3</a></li>
+    <li>LyondellBasell. (s. f.). <i>Hostalen ACP 5231 D: Technical information and typical properties.</i> <a href="https://www.lyondellbasell.com/en/polymers/p/Hostalen-ACP-5231-D/4c8877db-8add-40ca-847e-a681bd863b6a" target="_blank" rel="noopener">https://www.lyondellbasell.com/en/polymers/p/Hostalen-ACP-5231-D/4c8877db-8add-40ca-847e-a681bd863b6a</a></li>
+  </ol>
+  <h3>Cómo utilizar estas fuentes en el documento</h3>
+  <div class="tw"><table>
+    <tr><th>Uso</th><th>Fuentes</th></tr>
+    <tr><td>Selección y caracterización del rHDPE</td><td>ASTM D792, ASTM D1238, ASTM D638, ASTM D1693 e ISO 11357-3:2025</td></tr>
+    <tr><td>Ciclo frigorífico y COP</td><td>ASHRAE (2021)</td></tr>
+    <tr><td>Canales de enfriamiento conformados y manufactura aditiva</td><td>Feng et al. (2021)</td></tr>
+    <tr><td>Comparación con un HDPE comercial</td><td>LyondellBasell (s. f.), indicando expresamente que sus valores no corresponden al material reciclado del proyecto</td></tr>
+  </table></div>
+</section>
+
+</main>
+</div>
+
+
+</div>
+<script>
+/* ---------- utilidades ---------- */
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const fmt=(n,d)=>{ if(!isFinite(n)) return '—'; return n.toFixed(d).replace('.',','); };
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+/* ---------- tema ---------- */
+$('#theme').addEventListener('click',()=>{
+  const r=document.documentElement;
+  const dark = r.dataset.theme ? r.dataset.theme==='dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  r.dataset.theme = dark ? 'light' : 'dark';
+});
+
+/* ---------- diagramas de flujo ---------- */
+function flow(id,spec){
+  const N={}; spec.nodes.forEach(n=>{n.w=n.w||190;n.h=n.h||(n.cls==='decision'?54:46);N[n.id]=n;});
+  const pt=(n,p)=>p==='t'?{x:n.x,y:n.y-n.h/2}:p==='b'?{x:n.x,y:n.y+n.h/2}:p==='l'?{x:n.x-n.w/2,y:n.y}:{x:n.x+n.w/2,y:n.y};
+  const vert=p=>p==='t'||p==='b';
+  let out=`<svg viewBox="0 0 ${spec.w} ${spec.h}" role="img" aria-label="${esc(spec.label)}" style="max-width:${spec.max||720}px"><defs><marker id="ar-${id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--muted)"/></marker></defs>`;
+  spec.edges.forEach(e=>{
+    let pts;
+    if(e.pts){pts=e.pts.map(p=>({x:p[0],y:p[1]}));}
+    else{
+      const a=N[e.a],b=N[e.b],pa=e.pa||'b',pb=e.pb||'t',p0=pt(a,pa),p1=pt(b,pb);
+      if(vert(pa)&&vert(pb)){ if(p0.x===p1.x) pts=[p0,p1]; else {const m=(p0.y+p1.y)/2; pts=[p0,{x:p0.x,y:m},{x:p1.x,y:m},p1];} }
+      else if(!vert(pa)&&!vert(pb)){ if(p0.y===p1.y) pts=[p0,p1]; else {const m=(p0.x+p1.x)/2; pts=[p0,{x:m,y:p0.y},{x:m,y:p1.y},p1];} }
+      else if(!vert(pa)&&vert(pb)) pts=[p0,{x:p1.x,y:p0.y},p1];
+      else pts=[p0,{x:p0.x,y:p1.y},p1];
+    }
+    out+=`<path d="M${pts.map(p=>p.x+','+p.y).join('L')}" fill="none" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#ar-${id})"/>`;
+    if(e.l){
+      const p0=pts[0],p1=pts[1],len=Math.hypot(p1.x-p0.x,p1.y-p0.y)||1,k=Math.min(len/2,e.k||30)/len;
+      const lx=p0.x+(p1.x-p0.x)*k,ly=p0.y+(p1.y-p0.y)*k,tw=e.l.length*6.2+12;
+      out+=`<rect class="elab" x="${lx-tw/2}" y="${ly-9}" width="${tw}" height="18" rx="9"/><text class="elabt" x="${lx}" y="${ly+4}">${esc(e.l)}</text>`;
+    }
+  });
+  spec.nodes.forEach(n=>{
+    const lines=n.t.split('\n'),lh=15,y0=n.y-(lines.length-1)*lh/2+4;
+    out+=`<rect class="nd ${n.cls||''}" x="${n.x-n.w/2}" y="${n.y-n.h/2}" width="${n.w}" height="${n.h}" rx="${n.cls==='decision'?24:8}"/>`;
+    out+=`<text class="nt" x="${n.x}" y="${y0}">${lines.map((l,i)=>`<tspan x="${n.x}" dy="${i?lh:0}">${esc(l)}</tspan>`).join('')}</text>`;
+  });
+  return out+'</svg>';
+}
+const E=(a,b,pa,pb,l)=>({a,b,pa,pb,l});
+
+$('#f-lote').innerHTML=flow('lote',{w:710,h:700,label:'Flujo de recepción, caracterización y aprobación del lote de rHDPE',nodes:[
+  {id:'1',x:355,y:30,t:'Recepción del lote de rHDPE'},
+  {id:'2',x:355,y:100,t:'Identificación y muestreo'},
+  {id:'3',x:355,y:170,t:'Ensayos: densidad,\nMFR, DSC y tracción'},
+  {id:'4',x:355,y:240,t:'Revisión de contaminación\ny homogeneidad'},
+  {id:'5',x:355,y:320,t:'¿Cumple la especificación\ndel producto?',cls:'decision'},
+  {id:'6',x:130,y:410,t:'Lote autorizado para\nprueba de soplado',cls:'ok'},
+  {id:'7',x:580,y:410,t:'Retener, segregar o\nrechazar el lote',cls:'bad'},
+  {id:'8',x:130,y:490,t:'Prueba de conformado y\ncontrol del envase'},
+  {id:'9',x:130,y:570,t:'¿El envase cumple?',cls:'decision'},
+  {id:'10',x:130,y:650,t:'Liberación según el\nplan de calidad',cls:'ok'},
+  {id:'11',x:355,y:650,t:'Investigar causa y ajustar\nproceso o material',cls:'warn'}],
+ edges:[E('1','2'),E('2','3'),E('3','4'),E('4','5'),E('5','6','l','t','Sí'),E('5','7','r','t','No'),E('6','8'),E('8','9'),E('9','10','b','t','Sí'),E('9','11','r','t','No')]});
+
+$('#f-proceso').innerHTML=flow('proc',{w:640,h:760,max:640,label:'Flujo del proceso de moldeo por soplado de extrusión',nodes:[
+  {id:'1',x:320,y:30,t:'Recepción e inspección del rHDPE'},
+  {id:'2',x:320,y:92,t:'Alimentación de la extrusora'},
+  {id:'3',x:320,y:154,t:'Calentamiento y plastificación',cls:'heat'},
+  {id:'4',x:320,y:216,t:'Extrusión del parisón'},
+  {id:'5',x:320,y:278,t:'Cierre del molde y soplado'},
+  {id:'6',x:320,y:340,t:'Enfriamiento del envase\ny del molde',cls:'cold'},
+  {id:'7',x:320,y:402,t:'Apertura y extracción'},
+  {id:'8',x:320,y:464,t:'Inspección dimensional\ny de integridad'},
+  {id:'9',x:320,y:548,t:'¿Cumple los requisitos?',cls:'decision'},
+  {id:'10',x:120,y:640,t:'Producto aceptado',cls:'ok',w:180},
+  {id:'11',x:520,y:640,t:'Segregación y análisis\ndel defecto',cls:'bad',w:180},
+  {id:'12',x:520,y:712,t:'Ajuste de parámetros y\nnueva validación',cls:'warn',w:180}],
+ edges:[E('1','2'),E('2','3'),E('3','4'),E('4','5'),E('5','6'),E('6','7'),E('7','8'),E('8','9'),E('9','10','l','t','Sí'),E('9','11','r','t','No'),E('11','12')]});
+
+$('#f-ciclo').innerHTML=flow('ciclo',{w:760,h:500,label:'Ciclo de refrigeración por compresión de vapor con recuperación de calor',nodes:[
+  {id:'ic',x:380,y:36,t:'Intercambiador de recuperación',cls:'ok',w:230},
+  {id:'co',x:380,y:140,t:'3. Condensador\nRechaza calor Q̇H',cls:'heat',w:220},
+  {id:'cm',x:650,y:250,t:'2. Compresor\nConsume trabajo Ẇcomp',w:200},
+  {id:'ev',x:380,y:360,t:'1. Evaporador\nAbsorbe calor Q̇L',cls:'cold',w:220},
+  {id:'va',x:110,y:250,t:'4. Válvula de expansión\nReduce presión',w:200},
+  {id:'ag',x:380,y:455,t:'Circuito de agua de proceso',cls:'cold',w:230}],
+ edges:[E('ev','cm','r','b'),E('cm','co','t','r'),E('co','va','l','t'),E('va','ev','b','l'),E('ag','ev','t','b','Entrega calor'),E('co','ic','t','b','Calor recuperable')]});
+
+$('#f-recup').innerHTML=flow('rec',{w:700,h:480,label:'Esquema conceptual de recuperación de calor',nodes:[
+  {id:'sf',x:230,y:30,t:'Sistema frigorífico'},
+  {id:'co',x:230,y:100,t:'Condensador',cls:'heat'},
+  {id:'qh',x:230,y:175,t:'Calor rechazado Q̇H',cls:'heat'},
+  {id:'sec',x:520,y:175,t:'Agua secundaria a\ntemperatura inicial',cls:'cold'},
+  {id:'ic',x:375,y:262,t:'Intercambiador de calor',cls:'ok'},
+  {id:'pre',x:230,y:352,t:'Agua precalentada',cls:'ok'},
+  {id:'rej',x:520,y:352,t:'Circuito de rechazo\nde calor restante'},
+  {id:'uso',x:230,y:435,t:'Uso auxiliar compatible'},
+  {id:'amb',x:520,y:435,t:'Ambiente o sistema\nde disipación'}],
+ edges:[E('sf','co'),E('co','qh'),E('qh','ic','b','l'),E('sec','ic','b','r'),E('ic','pre'),E('ic','rej'),E('pre','uso'),E('rej','amb')]});
+
+$('#f-aditiva').innerHTML=flow('adi',{w:720,h:800,label:'Secuencia de diseño, fabricación y validación del inserto con canales conformados',nodes:[
+  {id:'1',x:300,y:30,t:'Definir geometría y\nrequisitos del envase'},
+  {id:'2',x:300,y:100,t:'Modelar molde y canales\nen CAD'},
+  {id:'3',x:300,y:170,t:'Simular temperatura y flujo\nmediante CFD',cls:'sim'},
+  {id:'4',x:300,y:240,t:'Revisar uniformidad térmica\ny pérdida de presión'},
+  {id:'5',x:300,y:320,t:'¿Diseño viable?',cls:'decision'},
+  {id:'6',x:580,y:320,t:'Modificar geometría y\nvolver a simular',cls:'warn'},
+  {id:'7',x:300,y:410,t:'Fabricar prototipo del\ninserto por LPBF'},
+  {id:'8',x:300,y:480,t:'Inspección dimensional\ny de canales'},
+  {id:'9',x:300,y:550,t:'Prueba de hermeticidad\ny circulación'},
+  {id:'10',x:300,y:620,t:'Ensayo controlado de\nmoldeo por soplado'},
+  {id:'11',x:300,y:690,t:'Comparar con el molde\nde referencia'},
+  {id:'12',x:300,y:760,t:'Aceptar, ajustar o\ndescartar la mejora',cls:'ok'}],
+ edges:[E('1','2'),E('2','3'),E('3','4'),E('4','5'),E('5','7','b','t','Sí'),E('5','6','r','l','No'),E('6','3','t','r'),E('7','8'),E('8','9'),E('9','10'),E('10','11'),E('11','12')]});
+
+$('#f-arq').innerHTML=flow('arq',{w:780,h:560,max:780,label:'Arquitectura de adquisición, simulación y mejora continua',nodes:[
+  {id:'mo',x:200,y:30,t:'Moldeo por soplado'},
+  {id:'se',x:110,y:110,t:'Sensores: temperatura,\ncaudal y presión',cls:'cold'},
+  {id:'re',x:330,y:110,t:'Registro de ciclo y\nconsumo eléctrico',cls:'cold'},
+  {id:'cad',x:640,y:110,t:'Modelo CAD del molde',cls:'sim'},
+  {id:'ad',x:220,y:190,t:'Adquisición y almacenamiento\nde datos'},
+  {id:'si',x:640,y:190,t:'Simulación térmica y CFD',cls:'sim'},
+  {id:'an',x:220,y:270,t:'Análisis de variables y\ndetección de anomalías'},
+  {id:'pr',x:640,y:270,t:'Predicciones del modelo',cls:'sim'},
+  {id:'cp',x:430,y:350,t:'Comparación entre datos\ny simulación'},
+  {id:'ev',x:430,y:430,t:'Evaluación de canales\nconvencionales y conformados'},
+  {id:'pa',x:430,y:510,t:'Propuesta de ajuste y\nvalidación física',cls:'ok'}],
+ edges:[E('mo','se'),E('mo','re'),E('se','ad'),E('re','ad'),E('ad','an'),E('an','cp'),E('cad','si'),E('si','pr'),E('pr','cp'),E('cp','ev'),E('ev','pa'),
+  {pts:[[525,510],[765,510],[765,30],[295,30]]}]});
+
+/* ---------- datos en tablas ---------- */
+const chip=(c,t)=>`<span class="chip ${c}">${t}</span>`;
+function table(id,head,rows,cap){
+  $(id).innerHTML=(cap?`<caption>${cap}</caption>`:'')+`<thead><tr>${head.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>`;
+}
+
+$('#criterios').innerHTML=[
+ ['Procesabilidad','El material debe fluir de manera suficientemente estable durante la extrusión para formar un parisón —tubo de polímero fundido— que pueda inflarse sin romperse ni presentar variaciones excesivas de espesor.'],
+ ['Resistencia e integridad','El envase debe soportar las cargas previstas, la manipulación y el uso para el que fue diseñado.'],
+ ['Estabilidad dimensional','La contracción y el enfriamiento deben permitir obtener dimensiones repetibles y reducir la deformación.'],
+ ['Homogeneidad del lote','Las variaciones de índice de fluidez, densidad y contaminación deben controlarse para evitar cambios impredecibles en el proceso.'],
+ ['Sostenibilidad','El uso de material reciclado permite valorizar residuos plásticos, siempre que la calidad obtenida sea compatible con los requisitos del producto.']
+].map(c=>`<div class="card"><h4>${c[0]}</h4><p>${c[1]}</p></div>`).join('');
+
+const ensayos=[
+ ['Densidad','ASTM D792, mediante desplazamiento','Verificar uniformidad entre muestras y detectar variaciones que puedan estar asociadas a composición, cristalinidad, porosidad o contaminación.'],
+ ['Índice de fluidez (MFR)','ASTM D1238, a 190 °C y 2,16 kg como condición inicial de comparación','Evaluar la consistencia del flujo del material fundido. La condición definitiva debe confirmarse para el grado reciclado y compararse siempre bajo las mismas condiciones.'],
+ ['Temperaturas y entalpías de fusión y cristalización','ISO 11357-3:2025, mediante calorimetría diferencial de barrido (DSC)','Determinar las transiciones térmicas y apoyar la definición de las condiciones de procesamiento y enfriamiento.'],
+ ['Propiedades de tracción','ASTM D638, sobre probetas preparadas bajo las condiciones de la norma','Medir tensión de fluencia, resistencia a tracción y elongación, según corresponda al material y al ensayo realizado.'],
+ ['Resistencia al agrietamiento por esfuerzo ambiental','ASTM D1693, si el uso final del envase justifica esta evaluación','Comparar la susceptibilidad al agrietamiento bajo las condiciones definidas por el método.'],
+ ['Espesor de pared del envase','Procedimiento interno documentado, mediante medición en puntos definidos con instrumento calibrado o medición de secciones','Verificar la distribución del espesor después del soplado. Este control del producto no debe confundirse con un ensayo de propiedades de la resina.']];
+const stSel=(cls)=>`<select class="st" data-cls="${cls}" aria-label="Estado">${['Planificado','En curso','Completado'].map(o=>`<option>${o}</option>`).join('')}</select>`;
+table('#t-ensayos',['Propiedad que se evaluará','Método seleccionado','Finalidad para el proyecto','Estado'],ensayos.map(r=>[...r,stSel()]));
+
+function checklist(id,items,label){
+  const el=$(id);
+  el.innerHTML=`<div class="prog" aria-hidden="true"><i></i></div><div class="figcap cnt"></div><ul class="checks">${items.map((t,i)=>`<li><input type="checkbox" id="${id.slice(1)}-${i}"><label for="${id.slice(1)}-${i}">${t}</label></li>`).join('')}</ul>`;
+  const upd=()=>{const c=$$('input:checked',el).length;$('.prog i',el).style.width=(c/items.length*100)+'%';$('.cnt',el).textContent=`${label}: ${c} de ${items.length}`;};
+  el.addEventListener('change',upd);upd();
+}
+checklist('#ck-condiciones',[
+ 'Tomar muestras representativas de cada lote de rHDPE y registrar proveedor, identificación, fecha de recepción y procedencia declarada.',
+ 'Homogeneizar y acondicionar las muestras según el procedimiento aplicable a cada ensayo.',
+ 'Registrar el método y la edición de la norma, la preparación de la muestra, el equipo utilizado, su calibración, las condiciones de ensayo y los resultados individuales.',
+ 'Realizar réplicas suficientes para evaluar la dispersión; como protocolo inicial de proyecto se propone ensayar al menos cinco probetas para tracción cuando la geometría y el método lo permitan, y realizar réplicas para los demás ensayos según el método y la disponibilidad de muestra.',
+ 'Comparar los resultados con la especificación del producto y con lotes anteriores. Los límites de aceptación deberán definirse antes de declarar que el material es apto.'],'Pasos completados');
+
+table('#t-relacion',['Propiedad o condición','Riesgo durante el soplado','Control propuesto'],[
+ ['MFR demasiado alto para el diseño del envase','Parisón con baja estabilidad y distribución irregular del material','Caracterización del MFR y ajuste experimental de las condiciones de extrusión.'],
+ ['MFR variable entre lotes','Variación del flujo y de la repetibilidad del proceso','Control de recepción por lote y trazabilidad.'],
+ ['Contaminación o mezcla de polímeros','Defectos superficiales, pérdida de uniformidad o variación de propiedades','Inspección del material recibido, segregación y validación del lote.'],
+ ['Comportamiento térmico variable','Cambios en la plastificación, cristalización y contracción','Ensayo DSC y control de temperaturas de proceso.'],
+ ['Resistencia mecánica insuficiente','Deformación, fisuras o fallo durante el uso','Ensayo de tracción y prueba funcional del envase.'],
+ ['Enfriamiento desigual','Deformación, contracción diferencial o variación dimensional','Medición de temperaturas del molde, caudal de refrigerante y dimensiones finales.']]);
+
+table('#t-params',['Parámetro','Por qué es crítico','Cómo se controlará'],[
+ ['Temperatura de plastificación','Influye en la viscosidad y la estabilidad del polímero fundido','Sensores de temperatura por zona y registro de consigna y valor real.'],
+ ['Velocidad de extrusión','Afecta la producción del parisón y su uniformidad','Registro de velocidad y masa producida por unidad de tiempo.'],
+ ['Tiempo y presión de soplado','Condicionan el contacto del parisón con el molde y la definición de la geometría','Sensor de presión y registro de la secuencia de soplado.'],
+ ['Temperatura del molde','Influye en la transferencia de calor, la solidificación y la repetibilidad dimensional','Sensores distribuidos en zonas críticas del molde.'],
+ ['Temperatura del refrigerante','Determina la diferencia de temperatura disponible para retirar calor','Medición de temperatura de entrada y salida.'],
+ ['Caudal del refrigerante','Afecta el transporte de calor y la uniformidad del enfriamiento','Caudalímetro y registro continuo.'],
+ ['Tiempo de enfriamiento','Puede limitar el ciclo productivo y afectar la estabilidad del envase','Registro del tiempo desde el soplado hasta la extracción.'],
+ ['Espesor de pared','Condiciona el uso de material, la resistencia y la calidad del producto','Medición en puntos definidos y control de la variabilidad.']],'Tabla 3. Parámetros críticos de proceso y su control propuesto');
+
+$('#defectos').innerHTML=['Variaciones del espesor','Deformación','Contracción desigual','Falta de definición geométrica','Parisón inestable','Defectos superficiales','Fugas'].map(d=>`<span class="s">${d}</span>`).join('');
+
+checklist('#ck-validar',[
+ 'Temperatura y caudal del agua a la entrada y salida del evaporador.',
+ 'Potencia eléctrica real del compresor y, si se desea el desempeño global de la instalación, potencia de bombas y ventiladores.',
+ 'Refrigerante empleado y condiciones de operación del equipo.',
+ 'Tiempo de estabilización, duración del registro y condiciones de carga.',
+ 'Incertidumbre de los instrumentos y límites del balance energético.'],'Registros disponibles');
+
+checklist('#ck-viable',[
+ '<b>Disponibilidad de calor:</b> el condensador debe entregar calor a un nivel de temperatura aprovechable por el proceso auxiliar.',
+ '<b>Demanda coincidente:</b> debe existir una demanda real de agua precalentada durante las horas de operación del sistema frigorífico.',
+ '<b>Compatibilidad térmica:</b> la temperatura de salida debe ser útil para el proceso receptor; si no lo es, el beneficio puede ser limitado.',
+ '<b>Integridad del ciclo frigorífico:</b> el intercambiador no debe provocar presiones de condensación o temperaturas que perjudiquen la capacidad o eficiencia del equipo.',
+ '<b>Balance económico:</b> el ahorro energético debe compensar la inversión, la instalación, el mantenimiento y las pérdidas de presión asociadas.',
+ '<b>Seguridad e higiene:</b> el circuito recuperado debe mantenerse separado del agua de proceso cuando corresponda, y su uso debe ajustarse a la calidad exigida.'],'Criterios cumplidos');
+
+table('#t-benef',['Indicador','Método de cálculo o medición','Utilidad'],[
+ ['Calor recuperado','Q̇<sub>rec</sub> = ṁ · c<sub>p</sub> · (T<sub>salida</sub> − T<sub>entrada</sub>)','Cuantificar la energía térmica transferida al circuito secundario.'],
+ ['Fracción de recuperación','f<sub>rec</sub> = Q̇<sub>rec</sub> / Q̇<sub>H</sub>','Comparar el calor aprovechado con el rechazado por el condensador.'],
+ ['Energía eléctrica consumida','Medición con analizador de energía eléctrica','Evitar atribuir ahorros a la recuperación sin verificar el consumo real.'],
+ ['Ahorro de energía auxiliar','Comparación entre energía requerida antes y después de la recuperación','Estimar el beneficio neto en el proceso receptor.'],
+ ['Recuperación económica','Coste de energía evitada frente a inversión y costes operativos','Determinar el periodo de retorno con tarifas y horarios reales.']]);
+
+table('#t-vars',['Variable','En simulación','En validación física'],[
+ ['Temperatura del molde','Campo de temperatura y distribución espacial','Termopares o sensores calibrados en ubicaciones definidas.'],
+ ['Tiempo de enfriamiento','Estimación del tiempo para alcanzar el criterio térmico definido','Cronometraje del ciclo con un criterio de extracción constante.'],
+ ['Caudal del refrigerante','Predicción del flujo en los canales','Caudalímetro instalado en el circuito.'],
+ ['Pérdida de presión','Cálculo de la diferencia de presión entre entrada y salida','Sensores de presión o manómetros adecuados.'],
+ ['Espesor de pared','No debe inferirse únicamente a partir de la temperatura; requiere un modelo de proceso apropiado','Medición del espesor del envase en puntos establecidos.'],
+ ['Deformación dimensional','Predicción térmica-mecánica si el modelo y las propiedades están disponibles','Medición de dimensiones y deformación del envase después del enfriamiento.'],
+ ['Defectos','Predicción de zonas de riesgo a partir de hipótesis físicas y parámetros','Inspección y registro de defectos observados.']]);
+
+$('#tecnologias').innerHTML=[
+ ['CAD','Define la geometría de la cavidad, el inserto y los canales de refrigeración.','c-sim'],
+ ['CFD y simulación térmica','Estiman la distribución de temperatura, el flujo y la pérdida de presión para diferentes diseños. La fiabilidad de la predicción depende de las condiciones de frontera, las propiedades de los materiales y la calidad de la malla.','c-sim'],
+ ['Sensores IoT','Permiten adquirir y transmitir las variables operativas. Deben seleccionarse por rango, precisión, respuesta y compatibilidad con el entorno industrial.','c-calc'],
+ ['Análisis de datos','Permite relacionar las condiciones de operación con el tiempo de ciclo, la variabilidad del espesor y los defectos detectados.','c-calc'],
+ ['Modelo digital o gemelo digital','Podrá desarrollarse si el modelo de simulación se calibra y valida con datos reales de la máquina y del molde. Un modelo CAD aislado o una simulación sin contraste experimental no constituyen por sí solos un gemelo digital validado.','c-med']
+].map(t=>`<div class="card"><h4>${t[0]}</h4><p>${t[1]}</p></div>`).join('');
+
+const inds=[
+ ['Tiempo de ciclo','Tiempo entre eventos de referencia definidos para cada ciclo','Control de máquina y registro temporal.','s'],
+ ['Consumo eléctrico específico','Energía consumida dividida entre el número de envases aceptados','Analizador eléctrico y registro de producción.','kWh/envase'],
+ ['Diferencia de temperatura del refrigerante','T<sub>salida</sub> − T<sub>entrada</sub>','Sensores de temperatura.','°C'],
+ ['Diferencia de presión','Presión de entrada menos presión de salida del circuito','Sensores de presión.','kPa'],
+ ['Variabilidad del espesor','Dispersión de las mediciones de espesor en puntos definidos','Inspección dimensional.','mm'],
+ ['Tasa de defectos','Envases defectuosos divididos entre envases inspeccionados, multiplicado por 100 %','Registro de control de calidad.','%'],
+ ['Fracción de recuperación térmica','Calor medido en el circuito secundario dividido entre calor rechazado por el condensador','Caudalímetros, sensores de temperatura y balance energético.','%']];
+table('#t-ind',['Indicador','Definición operativa','Fuente de datos','Valor medido','Criterio de aceptación','Estado'],
+ inds.map((r,i)=>[r[0],r[1],r[2],`<input type="number" step="any" class="iv" data-i="${i}" placeholder="— ${r[3]}" aria-label="Valor medido de ${r[0]}">`,`<input type="text" class="ia" size="10" placeholder="definir antes" aria-label="Criterio de aceptación de ${r[0]}">`,`<span class="chip c-med" id="ist-${i}">Por medir</span>`]));
+$('#t-ind').addEventListener('input',e=>{ if(e.target.classList.contains('iv')){const s=$('#ist-'+e.target.dataset.i);const ok=e.target.value!=='';s.className='chip '+(ok?'c-ok':'c-med');s.textContent=ok?'Medido':'Por medir';}});
+
+/* matriz de validación */
+const matriz=[
+ ['Asegurar la aptitud del rHDPE','Resultados de ensayos y trazabilidad del lote','Cumplimiento de la especificación definida antes de ensayar.'],
+ ['Evaluar la refrigeración','Caudal, temperaturas y consumo eléctrico medidos','Balance energético consistente y COP reportado con frontera explícita.'],
+ ['Validar la recuperación de calor','Potencia térmica transferida y demanda real de agua precalentada','Beneficio térmico útil sin comprometer el funcionamiento frigorífico.'],
+ ['Evaluar canales conformados','Simulación, inspección del inserto y ensayos comparativos','Mejora verificable sin deterioro de calidad ni pérdidas de presión inaceptables.'],
+ ['Integrar tecnologías digitales','Registros trazables, modelo calibrado y validación independiente','Errores documentados y predicciones suficientemente fiables para el propósito definido.']];
+const semSel=`<select class="sem" aria-label="Estado de validación">${['Pendiente de evidencia','En evaluación','Cumple el criterio','No cumple'].map(o=>`<option>${o}</option>`).join('')}</select>`;
+table('#t-matriz',['Objetivo','Evidencia necesaria','Criterio de decisión','Estado'],matriz.map(r=>[...r,semSel]));
+const semCls={'Pendiente de evidencia':'c-med','En evaluación':'c-sup','Cumple el criterio':'c-ok','No cumple':'c-bad'};
+function semUpd(){
+  let c=0;
+  $$('#t-matriz select.sem').forEach(s=>{ s.style.borderColor=`var(--${{'c-med':'line','c-sup':'warn','c-ok':'ok','c-bad':'bad'}[semCls[s.value]]})`; s.style.background=`var(--${{'c-med':'bg','c-sup':'warn-bg','c-ok':'ok-bg','c-bad':'bad-bg'}[semCls[s.value]]})`; if(s.value==='Pendiente de evidencia')c++; });
+  $('#matriz-res').textContent=`${c} de ${matriz.length} objetivos permanecen pendientes de evidencia. El estado se cambia solo cuando exista evidencia medida.`;
+}
+$('#t-matriz').addEventListener('change',semUpd);semUpd();
+$('#t-ensayos').addEventListener('change',e=>{
+  if(e.target.classList.contains('st')){const m={'Planificado':'bg','En curso':'warn-bg','Completado':'ok-bg'};e.target.style.background=`var(--${m[e.target.value]})`;}
+});
+
+/* ---------- estado y simulador ---------- */
+const DEF={mw:.25,cp:4.18,Tin:25,Tout:20,W:1.8,f:.7,ms:.1,cps:4.18,Tsin:20};
+const S={...DEF}; let R={};
+const SL={ // clave: [etiqueta, min, max, paso, unidad, texto informe, decimales]
+ mw:['Caudal másico de agua ṁ<sub>w</sub>',0.05,1.5,0.01,'kg/s','Informe: 0,25 kg/s'],
+ cp:['Calor específico del agua c<sub>p,w</sub>',3.9,4.4,0.01,'kJ/(kg·K)','Informe: 4,18 kJ/(kg·K)'],
+ Tin:['Temp. de entrada del agua al evaporador',10,40,0.5,'°C','Informe: 25 °C'],
+ Tout:['Temp. de salida del agua del evaporador',5,35,0.5,'°C','Informe: 20 °C'],
+ W:['Potencia eléctrica asignada al compresor',0.5,6,0.05,'kW','Informe: 1,80 kW'],
+ f:['Fracción de recuperación f<sub>rec</sub>',0,1,0.01,'(0–1)','Informe: 0,70 (70 %), supuesto de sensibilidad'],
+ ms:['Caudal másico de agua secundaria',0.02,0.6,0.01,'kg/s','Informe: 0,10 kg/s'],
+ cps:['Calor específico del agua (secundaria)',3.9,4.4,0.01,'kJ/(kg·K)','Informe: 4,18 kJ/(kg·K)'],
+ Tsin:['Temp. de entrada del agua secundaria',5,35,0.5,'°C','Informe: 20 °C']};
+function slider(k){const [l,mn,mx,st,u,rep]=SL[k];
+  return `<div class="sl"><label for="n-${k}">${l}</label><input type="range" data-k="${k}" min="${mn}" max="${mx}" step="${st}" value="${S[k]}" aria-label="${l.replace(/<[^>]+>/g,'')}"><input type="number" id="n-${k}" data-k="${k}" min="${mn}" max="${mx}" step="${st}" value="${S[k]}"><span class="u">${u}</span><button class="rst" type="button" data-r="${k}" title="Volver al valor del informe" aria-label="Restablecer al valor del informe">↺</button><span class="rep">${rep}</span></div>`;}
+$('#sl-termo').innerHTML=['mw','cp','Tin','Tout','W'].map(slider).join('');
+$('#sl-recup').innerHTML=['f','ms','cps','Tsin'].map(slider).join('');
+function setKey(k,v){S[k]=v;$$(`[data-k="${k}"]`).forEach(el=>{if(document.activeElement!==el)el.value=v;});}
+document.addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset.k;if(!k)return;const v=parseFloat(e.target.value);if(isNaN(v))return;setKey(k,v);update();});
+document.addEventListener('click',e=>{
+  const r=e.target.dataset&&e.target.dataset.r;if(r){setKey(r,DEF[r]);update();}
+  if(e.target.id==='reset-all'){Object.keys(DEF).forEach(k=>setKey(k,DEF[k]));update();}
+  const p=e.target.dataset&&e.target.dataset.p;if(p!==undefined&&p!==''){const sc=SCN[+p];setKey('f',sc.f);setKey('ms',sc.ms);update();}
+});
+
+const SCN=[{n:'Conservador',f:.5,ms:.15,src:'Ilustrativo del dashboard'},{n:'Intermedio',f:.7,ms:.1,src:'Valores del informe'},{n:'Favorable',f:.85,ms:.08,src:'Ilustrativo del dashboard'}];
+$('#presets').innerHTML='<span>Aplicar escenario:</span>'+SCN.map((s,i)=>`<button class="btn" type="button" data-p="${i}">${s.n}</button>`).join('');
+
+function calc(){
+  const QL=S.mw*S.cp*(S.Tin-S.Tout),COP=QL/S.W,QH=QL+S.W,Qrec=S.f*QH,dTs=Qrec/(S.ms*S.cps);
+  R={...S,fpct:S.f*100,QL,COP,QH,Qrec,Qdis:QH-Qrec,dTs,Tsout:S.Tsin+dTs};
+}
+function sankey(){
+  const el=$('#sankey');
+  if(!(R.QL>0)){el.innerHTML='<div class="note bad">La temperatura de entrada debe ser mayor que la de salida para que Q̇<sub>L</sub> sea positivo.</div>';return;}
+  const sc=170/R.QH,hL=R.QL*sc,hW=R.W*sc,hR=R.Qrec*sc,hD=R.Qdis*sc,gap=26,top=24;
+  const xL=170,xM=400,xR=640,bw=14;
+  const yL=top,yW=top+hL+gap,yR=top,yD=top+hR+gap;
+  const rib=(x0,y0,h0,x1,y1,h1,col,op)=>{const m=(x0+x1)/2;return `<path d="M${x0},${y0}C${m},${y0} ${m},${y1} ${x1},${y1}L${x1},${y1+h1}C${m},${y1+h1} ${m},${y0+h0} ${x0},${y0+h0}Z" fill="${col}" opacity="${op}"/>`;};
+  const H=top+hL+hW+gap+top;
+  let s=`<svg viewBox="0 0 820 ${Math.max(H,top+hR+hD+gap+top)+6}" role="img" aria-label="Diagrama de Sankey del balance energético del condensador" style="max-width:820px">`;
+  s+=rib(xL+bw,yL,hL,xM,top,hL,'var(--cold)',.35)+rib(xL+bw,yW,hW,xM,top+hL,hW,'var(--elec)',.35);
+  s+=rib(xM+bw,top,hR,xR,yR,hR,'var(--ok)',.4)+rib(xM+bw,top+hR,hD,xR,yD,hD,'var(--heat)',.35);
+  s+=`<rect x="${xL}" y="${yL}" width="${bw}" height="${hL}" fill="var(--cold)"/><rect x="${xL}" y="${yW}" width="${bw}" height="${hW}" fill="var(--elec)"/>`;
+  s+=`<rect x="${xM}" y="${top}" width="${bw}" height="${hL+hW}" fill="var(--heat)"/>`;
+  s+=`<rect x="${xR}" y="${yR}" width="${bw}" height="${hR}" fill="var(--ok)"/><rect x="${xR}" y="${yD}" width="${bw}" height="${hD}" fill="var(--heat)" opacity=".7"/>`;
+  const tl=(x,y,a,t1,t2)=>`<text x="${x}" y="${y}" text-anchor="${a}" style="font-size:13px;font-weight:600">${t1}</text><text x="${x}" y="${y+15}" text-anchor="${a}" style="font-size:12px;fill:var(--muted)">${t2}</text>`;
+  s+=tl(xL-8,yL+Math.max(hL/2-6,8),'end','Q̇L evaporador',fmt(R.QL,3)+' kW (agua de proceso)');
+  s+=tl(xL-8,yW+Math.max(hW/2-6,8),'end','Ẇcomp compresor',fmt(R.W,2)+' kW (electricidad)');
+  s+=tl(xM+bw/2,top-8,'middle','Q̇H condensador',fmt(R.QH,3)+' kW');
+  s+=tl(xR+bw+8,yR+Math.max(hR/2-6,8),'start','Q̇rec recuperado',fmt(R.Qrec,3)+' kW (f = '+fmt(R.f*100,0)+' %)');
+  s+=tl(xR+bw+8,yD+Math.max(hD/2-6,8),'start','Calor disipado',fmt(R.Qdis,3)+' kW');
+  el.innerHTML=s+'</svg>';
+}
+function update(){
+  calc();
+  $$('[data-o]').forEach(el=>{el.textContent=fmt(R[el.dataset.o],+el.dataset.d);});
+  const same=Object.keys(DEF).every(k=>Math.abs(S[k]-DEF[k])<1e-9);
+  ['#scn-chip','#scn-chip2','#scn-chip3'].forEach(id=>{const c=$(id);c.className='chip '+(same?'c-sup':'c-sim');c.textContent=same?'Escenario del informe':'Escenario modificado';});
+  const w=$('#warn-termo');
+  if(R.Tin<=R.Tout){w.hidden=false;w.textContent='La temperatura de entrada del agua debe ser mayor que la de salida; con estos valores no hay calor retirado.';}else w.hidden=true;
+  sankey();
+  table('#t-escenarios',['Escenario','f<sub>rec</sub>','ṁ<sub>sec</sub> (kg/s)','Q̇<sub>rec</sub> (kW)','ΔT<sub>sec</sub> (°C)','T<sub>salida</sub> (°C)','Origen de los valores'],
+   SCN.map(s=>{const q=s.f*R.QH,d=q/(s.ms*S.cps);return [`<b>${s.n}</b> ${chip('c-sim','Simulación')}`,fmt(s.f,2),fmt(s.ms,2),fmt(q,3),fmt(d,2),fmt(S.Tsin+d,1),s.src];}),
+   'Tres escenarios calculados con el Q̇H actual (no son resultados medidos)');
+}
+update();
+
+/* ---------- calculadoras ---------- */
+const num=v=>v===''||v==null?NaN:parseFloat(v);
+function tcCalc(){
+  const a=num($('#tc1').value),b=num($('#tc2').value),o=$('#tc-out');
+  if(!(a>0)||!(b>=0)||isNaN(b)){o.innerHTML='Ingrese ambos tiempos para calcular Δt<sub>c</sub> y el % de reducción.';return;}
+  const d=a-b,p=d/a*100;
+  o.innerHTML=`Δt<sub>c</sub> = <b>${fmt(d,2)} s</b> · % de reducción = <b>${fmt(p,1)} %</b> ${chip('c-ok','Calculado con datos ingresados')}${d<0?'<br>El tiempo con canales conformados es mayor que el convencional.':''}<br><span class="figcap">Recuerde comprobar también calidad, pérdida de presión y consumo auxiliar antes de considerar exitosa la mejora.</span>`;
+}
+$('#tc1').addEventListener('input',tcCalc);$('#tc2').addEventListener('input',tcCalc);
+
+const parse=s=>s.split(/[\s;]+/).filter(Boolean).map(x=>parseFloat(x.replace(',','.')));
+function maeCalc(){
+  const y=parse($('#mae-y').value),p=parse($('#mae-p').value),o=$('#mae-out');
+  if(!y.length||!p.length){o.textContent='Sin datos emparejados todavía.';return;}
+  if(y.length!==p.length||y.some(isNaN)||p.some(isNaN)){o.innerHTML=`Los datos no están emparejados o contienen valores no numéricos (${y.length} mediciones, ${p.length} predicciones).`;return;}
+  const n=y.length,mae=y.reduce((s,v,i)=>s+Math.abs(v-p[i]),0)/n;
+  let mape='';
+  if(y.some(v=>Math.abs(v)<1e-9)) mape='MAPE no aplicable: hay mediciones iguales a cero; informe métricas absolutas.';
+  else {const m=100/n*y.reduce((s,v,i)=>s+Math.abs((v-p[i])/v),0);mape=`MAPE = <b>${fmt(m,2)} %</b>`+(y.some(v=>Math.abs(v)<1e-2)?' (hay mediciones cercanas a cero: interprételo con cautela)':'');}
+  o.innerHTML=`n = ${n} · MAE = <b>${fmt(mae,4)}</b> (unidad de la variable) · ${mape}`;
+}
+$('#mae-y').addEventListener('input',maeCalc);$('#mae-p').addEventListener('input',maeCalc);
+
+const CALCS=[
+ {t:'Diferencia de temperatura del refrigerante',f:[['Tsalida (°C)','a'],['Tentrada (°C)','b']],fn:(a,b)=>`ΔT = <b>${fmt(a-b,2)} °C</b>`},
+ {t:'Diferencia de presión',f:[['Presión de entrada (kPa)','a'],['Presión de salida (kPa)','b']],fn:(a,b)=>`ΔP = <b>${fmt(a-b,2)} kPa</b>`},
+ {t:'Consumo eléctrico específico',f:[['Energía consumida (kWh)','a'],['Envases aceptados','b']],fn:(a,b)=>b>0?`<b>${fmt(a/b,4)} kWh/envase</b>`:'Ingrese envases aceptados > 0'},
+ {t:'Tasa de defectos',f:[['Envases defectuosos','a'],['Envases inspeccionados','b']],fn:(a,b)=>b>0?`<b>${fmt(a/b*100,2)} %</b>`:'Ingrese envases inspeccionados > 0'},
+ {t:'Fracción de recuperación térmica',f:[['Calor medido en circuito secundario (kW)','a'],['Calor rechazado por el condensador (kW)','b']],fn:(a,b)=>b>0?`f<sub>rec</sub> = <b>${fmt(a/b*100,1)} %</b>`:'Ingrese Q̇H > 0'},
+ {t:'Calor recuperado medido',f:[['ṁ secundaria (kg/s)','a'],['cp (kJ/(kg·K))','c'],['Tsalida − Tentrada (K)','b']],fn:(a,b,c)=>`Q̇rec = <b>${fmt(a*c*b,3)} kW</b>`}
+];
+$('#calc-ind').innerHTML=CALCS.map((c,i)=>`<div class="card" data-c="${i}"><h4>${c.t} ${chip('c-med','Por medir')}</h4>${c.f.map(f=>`<label style="display:block;margin:4px 0;font-size:.85rem">${f[0]}<br><input type="number" step="any" data-f="${f[1]}"></label>`).join('')}<div class="res-box" data-out>Sin datos.</div></div>`).join('');
+$('#calc-ind').addEventListener('input',e=>{
+  const card=e.target.closest('[data-c]');if(!card)return;const c=CALCS[+card.dataset.c];
+  const v={};$$('input',card).forEach(i=>v[i.dataset.f]=num(i.value));
+  const need=c.f.map(f=>v[f[1]]);const out=$('[data-out]',card);
+  out.innerHTML=need.some(isNaN)?'Sin datos.':c.fn(v.a,v.b,v.c);
+});
+
+/* ---------- navegación activa ---------- */
+const links=$$('#toc a[href^="#"]'),secs=links.map(a=>$(a.getAttribute('href')));
+try{
+  const io=new IntersectionObserver(es=>{es.forEach(en=>{if(en.isIntersecting){links.forEach(l=>l.classList.toggle('act',l.getAttribute('href')==='#'+en.target.id));}});},{rootMargin:'-20% 0px -70% 0px'});
+  secs.forEach(s=>s&&io.observe(s));
+}catch(e){}
+</script>
+<script>
+/* ===================== SIMULADOR ===================== */
+(function(){
+'use strict';
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const HOT='#e8742a',COLD='#3a8fdc',LIQ='#f2b27c';
+const hex2rgb=h=>{h=h.replace('#','');return [0,2,4].map(i=>parseInt(h.substr(i,2),16));};
+const mix=(a,b,t)=>{t=clamp(t,0,1);const A=hex2rgb(a),B=hex2rgb(b);return 'rgb('+A.map((v,i)=>Math.round(v+(B[i]-v)*t)).join(',')+')';};
+const gauss=()=>{let u=0;while(!u)u=Math.random();const v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};
+const q=(s,r)=>(r||document).querySelector(s), qa=(s,r)=>[...(r||document).querySelectorAll(s)];
+const F=(n,d)=>fmt(n,d);
+const mean=a=>a.reduce((s,v)=>s+v,0)/(a.length||1);
+const cssv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+/* ---------- parámetros ---------- */
+const P={tExt:8,tBlow:4,tOpen:6,tCool:22,useModel:true,cfg:'conv',speed:5,running:true};
+if(typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches)P.running=false;
+const M={T0:200,Tx:60,tau:12,ratio:1,k:.25,defConv:2,defConf:2,dpConv:40,dpConf:40,pumpConv:.3,pumpConf:.3,dpMax:60,bias:2,noise:.3};
+const L={lot:'LOTE-001'};
+const V={Treq:30,chOn:6,chOff:22,dOn:8,dOff:16,dKW:4,tarifa:'',inv:'',dias:'',ok4:false,ok6:false};
+const LP=[
+ {k:'dens',n:'Densidad',m:'ASTM D792, por desplazamiento',u:'g/cm³',s:.001},
+ {k:'mfr',n:'Índice de fluidez (MFR)',m:'ASTM D1238, 190 °C y 2,16 kg (condición inicial)',u:'g/10 min',s:.01},
+ {k:'tm',n:'Temperatura de fusión (DSC)',m:'ISO 11357-3:2025',u:'°C',s:.1},
+ {k:'ys',n:'Tensión de fluencia (tracción)',m:'ASTM D638',u:'MPa',s:.1}];
+const LT={homog:'pend',escr:'na',blow:'none',probetas:''};
+LP.forEach(p=>{LT['min_'+p.k]='';LT['max_'+p.k]='';LT['res_'+p.k]='';});
+const OBJ={P,M,L,V,LT};
+const cv=(a,b)=>P.cfg==='conv'?a:b;
+const cfgName=c=>c==='conv'?'Convencional':'Conformado';
+
+/* ---------- modelo de enfriamiento ---------- */
+const tauOf=c=>c==='conv'?M.tau:M.tau*M.ratio;
+function tCoolOf(c){const Tw=S.Tout;if(!(M.T0>M.Tx&&M.Tx>Tw&&M.tau>0&&M.ratio>0))return NaN;return tauOf(c)*Math.log((M.T0-Tw)/(M.Tx-Tw));}
+function coolTime(){if(P.useModel){const t=tCoolOf(P.cfg);if(isFinite(t)&&t>0)return t;}return P.tCool;}
+function phases(){return [
+ {n:'Plastificación y extrusión del parisón',d:P.tExt},
+ {n:'Cierre del molde y soplado',d:P.tBlow},
+ {n:'Enfriamiento del envase y del molde',d:coolTime()},
+ {n:'Apertura y extracción',d:P.tOpen}];}
+
+/* ---------- motor ---------- */
+let G,anim=0;
+function newAgg(){return {sdT:0,sdp:0,sfl:0,n:0,tmax:-1e9,pmax:-1e9};}
+function resetG(){G={t:0,ct:0,n:0,acc:0,rej:0,E:0,Tm:S.Tout,Tp:S.Tout,dTf:0,ph:0,p:0,cycT:0,phs:phases(),Te:M.T0,Tn:M.T0,dpv:0,flowE:S.mw,
+ fl:{flow:false,temp:false,drift:false,d0:0},buf:{tm:[],dt:[],dp:[],pw:[]},agg:newAgg(),
+ hist:{tmax:[],dT:[],dp:[],flow:[]},thick:[],pairs:[],events:[],lastAnom:null,lastS:0,meas:{Tm:S.Tout,dT:0,dp:0,fl:S.mw},lastBad:false,lastEnd:-99};}
+resetG();
+
+function step(dt){
+  const ph=phases(),ct=ph.reduce((s,p)=>s+p.d,0);
+  G.t+=dt;G.ct+=dt;
+  let x=G.ct,i=0;while(i<3&&x>=ph[i].d){x-=ph[i].d;i++;}
+  const p=clamp(x/ph[i].d,0,1);G.ph=i;G.p=p;G.cycT=ct;G.phs=ph;
+  const Tw=S.Tout,Twf=Tw+(G.fl.temp?5:0),tau=tauOf(P.cfg),tauf=tau*(G.fl.flow?1.3:1);
+  let Te=M.T0,Tn=M.T0,contact=false;
+  if(i===1&&p>=.4)contact=true;
+  if(i===2){contact=true;Te=Twf+(M.T0-Twf)*Math.exp(-x/tauf);Tn=Tw+(M.T0-Tw)*Math.exp(-x/tau);}
+  if(i===3){Te=Twf+(M.T0-Twf)*Math.exp(-ph[2].d/tauf);Tn=Tw+(M.T0-Tw)*Math.exp(-ph[2].d/tau);}
+  G.Te=Te;G.Tn=Tn;
+  const k1=1-Math.exp(-dt/4);
+  G.Tm+=((Twf+M.k*((contact?Te:Twf)-Twf))-G.Tm)*k1;
+  G.Tp+=((Tw+M.k*((contact?Tn:Tw)-Tw))-G.Tp)*k1;
+  const dTb=S.Tin-S.Tout,meanL=(M.T0-Tw)*tau*(1-Math.exp(-ph[2].d/tau))/ct;
+  let raw=0;if(i===2&&meanL>0)raw=dTb*((Te-Twf)/meanL)*(G.fl.flow?1/.7:1);
+  G.dTf+=(raw-G.dTf)*(1-Math.exp(-dt/2));
+  G.flowE=S.mw*(G.fl.flow?.7:1);
+  G.dpv=cv(M.dpConv,M.dpConf)*Math.pow(G.flowE/(S.mw||1),2);
+  G.E+=S.W*dt/3600;
+  if(G.t-G.lastS>=.5){G.lastS=G.t;sample();}
+  if(G.ct>=ct){G.ct-=ct;endCycle(ct);}
+}
+function sample(){
+  const n=M.noise,r=n/.3*.01;
+  const Tmeas=G.Tm+M.bias+(G.fl.drift?.05*(G.t-G.fl.d0):0)+gauss()*n;
+  const dTm=G.dTf+gauss()*n*.3,dpm=G.dpv*(1+gauss()*r),pwm=S.W*(1+gauss()*r),flm=G.flowE*(1+gauss()*r);
+  const B=G.buf;B.tm.push(Tmeas);B.dt.push(dTm);B.dp.push(dpm);B.pw.push(pwm);
+  for(const k in B)if(B[k].length>180)B[k].shift();
+  const a=G.agg;a.n++;a.sdT+=dTm;a.sdp+=dpm;a.sfl+=flm;a.tmax=Math.max(a.tmax,Tmeas);a.pmax=Math.max(a.pmax,G.Tp);
+  G.meas={Tm:Tmeas,dT:dTm,dp:dpm,fl:flm};
+}
+const VN={tmax:'T molde máx. (°C)',dT:'ΔT refrigerante medio (K)',dp:'ΔP medio (kPa)',flow:'Caudal medio (kg/s)'};
+function endCycle(ct){
+  G.n++;
+  const pd=(cv(M.defConv,M.defConf)+(G.fl.flow?8:0)+(G.fl.temp?5:0))/100;
+  const bad=Math.random()<pd;bad?G.rej++:G.acc++;G.lastBad=bad;G.lastEnd=G.t;
+  const sdv=.04+(G.fl.flow?.04:0)+(G.fl.temp?.03:0);G.thick.push(1.2+gauss()*sdv);if(G.thick.length>40)G.thick.shift();
+  const a=G.agg;
+  if(a.n>0){anomaly({tmax:a.tmax,dT:a.sdT/a.n,dp:a.sdp/a.n,flow:a.sfl/a.n});G.pairs.push({m:a.tmax,p:a.pmax});}
+  G.agg=newAgg();
+}
+function anomaly(vals){
+  let any=null;
+  for(const k in vals){
+    const h=G.hist[k],x=vals[k];
+    if(h.length>=5){
+      const w=h.slice(-15),m=mean(w),sd=Math.sqrt(mean(w.map(v=>(v-m)*(v-m)))),s=Math.max(sd,.02*Math.abs(m),1e-6),z=(x-m)/s;
+      if(Math.abs(z)>3){G.events.unshift({t:G.t,lot:L.lot,cfg:cfgName(P.cfg),v:VN[k],val:x,z});if(G.events.length>30)G.events.pop();any=VN[k];continue;}
+    }
+    h.push(x);if(h.length>40)h.shift();
+  }
+  G.lastAnom=any?{t:G.t,v:any}:null;
+}
+
+/* ---------- construcción de controles ---------- */
+const OBJV=(o,k)=>OBJ[o][k];
+function ls(o,key,label,min,max,step,unit,rep){
+  const id='l-'+o+'-'+key,val=OBJV(o,key),lab=label.replace(/<[^>]+>/g,'');
+  return `<div class="sl"><label for="${id}">${label}</label><input type="range" data-o2="${o}" data-key="${key}" min="${min}" max="${max}" step="${step}" value="${val}" aria-label="${lab}"><input type="number" id="${id}" data-o2="${o}" data-key="${key}" min="${min}" max="${max}" step="${step}" value="${val}"><span class="u">${unit}</span>${rep?`<span class="rep">${rep}</span>`:''}</div>`;
+}
+function ss(k){return slider(k).replace(/(id|for)="n-/g,'$1="m2-n-');}
+function ni(o,key,label,unit,ph,step){const id='n-'+o+'-'+key;return `<label class="inl" for="${id}">${label}<input type="number" class="num-in" id="${id}" data-o2="${o}" data-key="${key}" step="${step||'any'}" min="0" placeholder="${ph||''}" value="${OBJV(o,key)}">${unit||''}</label>`;}
+
+/* ---------- navegación ---------- */
+const MODS=['1 Planta','2 Refrigeración y recuperación','3 Molde','4 Sensores y gemelo digital','5 Lote de rHDPE','6 Validación'];
+let curMod=1;
+function buildTabs(){q('#mods').innerHTML=MODS.map((t,i)=>`<button type="button" class="tabbtn${i===0?' on':''}" role="tab" data-m="${i+1}" aria-selected="${i===0}">${t}</button>`).join('');}
+function showMod(n){
+  curMod=n;qa('.mod').forEach(m=>m.hidden=m.id!=='m'+n);
+  qa('#mods .tabbtn').forEach(b=>{const on=+b.dataset.m===n;b.classList.toggle('on',on);b.setAttribute('aria-selected',on);});
+  renderMod(n);
+}
+function showView(v){
+  q('#view-sim').hidden=v!=='sim';q('#view-doc').hidden=v!=='doc';
+  qa('.ab-tabs .tabbtn').forEach(b=>b.classList.toggle('on',b.dataset.view===v));
+  window.scrollTo(0,0);
+}
+function renderMod(n){
+  if(n===1)renderM1S();
+  if(n===2){renderM2();}
+  if(n===3)renderM3();
+  if(n===4){renderM4S();renderM4();}
+  if(n===5)renderM5();
+  if(n===6)renderM6();
+}
+
+/* =========================================================
+   M1  PLANTA
+   ========================================================= */
+const CXP=360;
+function plantSVG(){return `<svg id="plant" viewBox="0 0 760 380" role="img" aria-label="Animación de la planta de moldeo por soplado de extrusión" style="max-width:760px">
+<path class="pl-body" d="M40,26 L104,26 L86,84 L58,84 Z"/><text class="nt" x="72" y="18">Tolva de rHDPE</text>
+<rect class="pl-body" x="82" y="84" width="232" height="46" rx="6"/>
+<rect id="hz1" x="94" y="90" width="64" height="34" rx="4" fill="${HOT}"/><rect id="hz2" x="166" y="90" width="64" height="34" rx="4" fill="${HOT}"/><rect id="hz3" x="238" y="90" width="64" height="34" rx="4" fill="${HOT}"/>
+<text class="nt" x="198" y="148">Extrusora: calentamiento y plastificación</text>
+<rect class="pl-body" x="314" y="84" width="92" height="64" rx="6"/><rect class="pl-body" x="344" y="148" width="32" height="18" rx="2"/>
+<text class="nt" x="360" y="76">Cabezal</text>
+<rect id="pari" x="348" y="166" width="24" height="0" rx="3" fill="${HOT}"/>
+<g id="mL"><rect class="pl-body" x="290" y="190" width="70" height="150" rx="6"/><rect id="mLt" x="290" y="190" width="70" height="150" rx="6" fill="${COLD}" opacity="0"/><path id="pL" d="M302,210 H348 V240 H302 V270 H348 V300 H302" fill="none" stroke="${COLD}" stroke-width="3" stroke-dasharray="7 5"/></g>
+<g id="mR"><rect class="pl-body" x="360" y="190" width="70" height="150" rx="6"/><rect id="mRt" x="360" y="190" width="70" height="150" rx="6" fill="${COLD}" opacity="0"/><path id="pR" d="M372,210 H418 V240 H372 V270 H418 V300 H372" fill="none" stroke="${COLD}" stroke-width="3" stroke-dasharray="7 5"/></g>
+<g id="bot" transform="translate(360,265)"><path id="botp" d="M-12,-70 L12,-70 L12,-52 C12,-40 34,-34 34,-18 L34,56 Q34,70 20,70 L-20,70 Q-34,70 -34,56 L-34,-18 C-34,-34 -12,-40 -12,-52 Z" fill="${HOT}" stroke="var(--ink)" stroke-width="1" opacity="0.9"/></g>
+<g id="sens"><circle cx="300" cy="352" r="9" class="pl-body"/><text class="nt" x="300" y="356">T</text><circle cx="360" cy="352" r="9" class="pl-body"/><text class="nt" x="360" y="356">Q</text><circle cx="420" cy="352" r="9" class="pl-body"/><text class="nt" x="420" y="356">P</text></g>
+<text class="nt" x="360" y="374" style="font-size:11px;fill:var(--muted)">Sensores IoT del molde</text>
+<rect id="binA" class="nd ok" x="548" y="300" width="96" height="48" rx="8"/><text class="nt" x="596" y="320">Aceptados</text><text id="binAt" class="nt" x="596" y="338" style="font-weight:700">0</text>
+<rect id="binR" class="nd bad" x="654" y="300" width="96" height="48" rx="8"/><text class="nt" x="702" y="320">Rechazados</text><text id="binRt" class="nt" x="702" y="338" style="font-weight:700">0</text>
+<text id="plabel" class="nt" x="600" y="40" style="font-size:13px;font-weight:600"></text>
+<text id="ptemp" class="nt" x="600" y="60" style="font-size:12px;fill:var(--muted)"></text>
+</svg>`;}
+let plantEls=null,tlSig='',flowSig='';
+function renderM1S(){
+  if(!plantEls){
+    q('#plant-host').innerHTML=plantSVG();
+    const ids=['pari','mL','mR','mLt','mRt','pL','pR','bot','botp','hz1','hz2','hz3','binA','binR','binAt','binRt','plabel','ptemp','sens'];
+    plantEls={};ids.forEach(i=>plantEls[i]=q('#'+i));
+    q('#m1-sl').innerHTML=ls('P','tExt','Plastificación y extrusión del parisón',1,30,.5,'s')+ls('P','tBlow','Cierre del molde y soplado',1,15,.5,'s')+ls('P','tOpen','Apertura y extracción',1,15,.5,'s')+ls('P','tCool','Enfriamiento manual (si no se usa el módulo 3)',3,90,.5,'s');
+    const defs=Object.keys(DEFMAP);
+    q('#m1-def').innerHTML=defs.map(d=>`<option>${d}</option>`).join('');
+    q('#m1-def').addEventListener('change',renderDef);
+    renderDef();
+  }
+  renderT3();
+}
+const DEFMAP={
+ 'Variaciones del espesor':['Temperatura de plastificación','Velocidad de extrusión','Espesor de pared','Índice de fluidez (MFR) del lote'],
+ 'Deformación':['Temperatura del molde','Tiempo de enfriamiento','Dimensiones del envase'],
+ 'Contracción desigual':['Temperatura del molde','Caudal del refrigerante','Tiempo de enfriamiento'],
+ 'Falta de definición geométrica':['Tiempo y presión de soplado','Temperatura del molde'],
+ 'Parisón inestable':['Índice de fluidez (MFR) del lote','Temperatura de plastificación','Velocidad de extrusión'],
+ 'Defectos superficiales':['Contaminación o mezcla de polímeros','Temperatura de plastificación','Temperatura del molde'],
+ 'Fugas':['Sistema de soplado','Geometría del envase','Tiempo y presión de soplado']};
+function liveOf(n){
+  if(n==='Temperatura del molde')return F(G.meas.Tm,1)+' °C';
+  if(n==='Tiempo de enfriamiento')return F(coolTime(),1)+' s';
+  if(n==='Caudal del refrigerante')return F(G.meas.fl,3)+' kg/s';
+  if(n==='Espesor de pared')return G.thick.length>2?'σ = '+F(sd(G.thick),3)+' mm':null;
+  return null;}
+function sd(a){const m=mean(a);return Math.sqrt(a.reduce((s,v)=>s+(v-m)*(v-m),0)/Math.max(1,a.length-1));}
+function renderDef(){
+  const d=q('#m1-def').value,items=DEFMAP[d];
+  q('#m1-defout').innerHTML=`<p class="mini">Variables registradas a correlacionar <span class="chip c-med">Orientación didáctica</span></p><ul class="checks" style="margin:4px 0">${items.map(i=>{const l=liveOf(i);return `<li style="padding:6px 10px"><span>${i}${l?` <span class="chip c-sim">${l} (sintético)</span>`:' <span class="chip c-med">Por medir</span>'}</span></li>`;}).join('')}</ul>`+
+   (d==='Deformación'?'<p class="mini">Ejemplo del informe: una deformación observada tras la extracción se investiga junto con la distribución de temperatura del molde, el tiempo de enfriamiento y las dimensiones del envase.</p>':'');
+}
+function renderT3(){
+  const rows=[
+   ['Temperatura de plastificación','—','Por medir','c-med'],
+   ['Velocidad de extrusión','—','Por medir','c-med'],
+   ['Tiempo y presión de soplado',`${F(P.tBlow,1)} s (parámetro del simulador)`,'Demostración','c-sup'],
+   ['Temperatura del molde','<span id="t3-tm"></span>','Sintético','c-sim'],
+   ['Temperatura del refrigerante','<span id="t3-tr"></span>','Sintético','c-sim'],
+   ['Caudal del refrigerante','<span id="t3-fl"></span>','Sintético','c-sim'],
+   ['Tiempo de enfriamiento','<span id="t3-tc"></span>','Modelo agrupado','c-calc'],
+   ['Espesor de pared','<span id="t3-th"></span>','Sintético','c-sim']];
+  q('#m1-t3').innerHTML='<thead><tr><th>Parámetro</th><th>Lectura</th><th>Origen</th></tr></thead><tbody>'+rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td><span class="chip ${r[3]}">${r[2]}</span></td></tr>`).join('')+'</tbody>';
+}
+function updT3(){
+  const set=(id,t)=>{const e=q('#'+id);if(e)e.textContent=t;};
+  set('t3-tm',F(G.meas.Tm,1)+' °C');
+  set('t3-tr',`entrada ${F(S.Tout+(G.fl.temp?5:0),1)} °C · salida ${F(S.Tout+(G.fl.temp?5:0)+Math.max(0,G.meas.dT),1)} °C`);
+  set('t3-fl',F(G.meas.fl,3)+' kg/s');
+  set('t3-tc',F(coolTime(),1)+' s');
+  set('t3-th',G.thick.length>2?'σ = '+F(sd(G.thick),3)+' mm':'recolectando…');
+}
+function procSpec(act){
+  const c=(id,base)=>act.includes(id)?'sim':base;
+  return {w:640,h:760,max:520,label:'Flujo del proceso de moldeo por soplado',nodes:[
+  {id:'1',x:320,y:30,t:'Recepción e inspección del rHDPE',cls:c('1','')},
+  {id:'2',x:320,y:92,t:'Alimentación de la extrusora',cls:c('2','')},
+  {id:'3',x:320,y:154,t:'Calentamiento y plastificación',cls:c('3','heat')},
+  {id:'4',x:320,y:216,t:'Extrusión del parisón',cls:c('4','')},
+  {id:'5',x:320,y:278,t:'Cierre del molde y soplado',cls:c('5','')},
+  {id:'6',x:320,y:340,t:'Enfriamiento del envase\ny del molde',cls:c('6','cold')},
+  {id:'7',x:320,y:402,t:'Apertura y extracción',cls:c('7','')},
+  {id:'8',x:320,y:464,t:'Inspección dimensional\ny de integridad',cls:c('8','')},
+  {id:'9',x:320,y:548,t:'¿Cumple los requisitos?',cls:'decision'},
+  {id:'10',x:120,y:640,t:'Producto aceptado',cls:c('10','ok'),w:180},
+  {id:'11',x:520,y:640,t:'Segregación y análisis\ndel defecto',cls:c('11','bad'),w:180},
+  {id:'12',x:520,y:712,t:'Ajuste de parámetros y\nnueva validación',cls:'warn',w:180}],
+  edges:[E('1','2'),E('2','3'),E('3','4'),E('4','5'),E('5','6'),E('6','7'),E('7','8'),E('8','9'),E('9','10','l','t','Sí'),E('9','11','r','t','No'),E('11','12')]};
+}
+function drawPlant(){
+  const E_=plantEls;if(!E_)return;
+  const i=G.ph,p=G.p,Tw=S.Tout;
+  let gap=150,par=0,sx=.35,bshow=false,ty=0,bop=.9;
+  if(i===0)par=130*p;
+  else if(i===1){par=130;if(p<.4)gap=150*(1-p/.4);else{gap=0;bshow=true;par=0;sx=lerp(.35,1,(p-.4)/.6);}}
+  else if(i===2){gap=0;bshow=true;sx=1;}
+  else{bshow=true;sx=1;if(p<.4)gap=150*(p/.4);else{gap=150;ty=(p-.4)/.6*45;bop=.9*(1-(p-.4)/.6);}}
+  E_.pari.setAttribute('height',par);
+  E_.mL.setAttribute('transform',`translate(${-gap/2},0)`);E_.mR.setAttribute('transform',`translate(${gap/2},0)`);
+  E_.bot.setAttribute('transform',`translate(360,${265+ty}) scale(${sx},1)`);E_.bot.style.display=bshow?'':'none';
+  const frac=clamp((G.Te-Tw)/((M.T0-Tw)||1),0,1);
+  E_.botp.setAttribute('fill',mix(COLD,HOT,frac));E_.botp.setAttribute('opacity',bop);
+  const ov=i===2?.35*(.4+.6*p):(i===3&&p<.4?.3:0);
+  E_.mLt.setAttribute('opacity',ov);E_.mRt.setAttribute('opacity',ov);
+  const flow=anim*40*(S.mw/.25);
+  E_.pL.style.strokeDashoffset=-flow;E_.pR.style.strokeDashoffset=-flow;
+  ['hz1','hz2','hz3'].forEach((h,k)=>E_[h].setAttribute('opacity',(i===0?.9:.35)*(.8+.2*Math.sin(anim*2+k))));
+  E_.binAt.textContent=G.acc;E_.binRt.textContent=G.rej;
+  const recent=G.t-G.lastEnd<1.2&&G.n>0;
+  E_.binA.style.strokeWidth=recent&&!G.lastBad?3:1.2;E_.binR.style.strokeWidth=recent&&G.lastBad?3:1.2;
+  E_.plabel.textContent=G.phs[i].n;E_.ptemp.textContent=`T envase (modelo): ${F(G.Te,0)} °C`;
+}
+function drawTL(){
+  const ph=G.phs,sig=ph.map(p=>p.d.toFixed(2)).join('|');
+  const tl=q('#tl');if(!tl)return;
+  if(sig!==tlSig){tlSig=sig;const tot=ph.reduce((s,p)=>s+p.d,0);tl.innerHTML=ph.map((p,i)=>`<div class="seg s${i}" style="flex:${p.d}" title="${p.n}: ${F(p.d,1)} s">${F(p.d,1)} s</div>`).join('')+'<div class="ph" id="tl-ph"></div>';}
+  const tot=ph.reduce((s,p)=>s+p.d,0),el=q('#tl-ph');if(el)el.style.left=(clamp(G.ct/tot,0,1)*100)+'%';
+}
+function drawFlowProc(){
+  const i=G.ph;let act=[['3','4'],['5'],['6'],['7']][i];
+  if(G.n>0&&G.ct<1.5&&G.t-G.lastEnd<1.5)act=['8','9',G.lastBad?'11':'10'];
+  const sig=act.join(',');if(sig===flowSig)return;flowSig=sig;
+  q('#m1-flow').innerHTML=flow('procs',procSpec(act));
+}
+function renderM1Live(frame){
+  drawPlant();drawTL();
+  q('#m1-n').textContent=G.n;q('#m1-tc').textContent=F(G.cycT||phases().reduce((s,p)=>s+p.d,0),1);q('#m1-ph').textContent=G.phs[G.ph].n;q('#m1-te').textContent=F(G.Te,0);
+  if(frame%5===0){drawFlowProc();updT3();}
+  if(frame%30===0)renderDef();
+}
+
+/* =========================================================
+   M2  REFRIGERACIÓN Y RECUPERACIÓN
+   ========================================================= */
+const LOOP=[[470,380],[650,380],[650,90],[110,90],[110,380],[290,380],[470,380]];
+let LOOPC=[],LOOPT=0;
+(function(){let s=0;LOOPC=[0];for(let i=1;i<LOOP.length;i++){s+=Math.hypot(LOOP[i][0]-LOOP[i-1][0],LOOP[i][1]-LOOP[i-1][1]);LOOPC.push(s);}LOOPT=s;})();
+function ptAt(s){s=((s%LOOPT)+LOOPT)%LOOPT;let i=1;while(i<LOOPC.length-1&&s>LOOPC[i])i++;const t=(s-LOOPC[i-1])/(LOOPC[i]-LOOPC[i-1]),a=LOOP[i-1],b=LOOP[i];return {x:lerp(a[0],b[0],t),y:lerp(a[1],b[1],t),seg:i-1};}
+function refColor(pt){
+  const {x,y,seg}=pt;
+  if(seg===1)return y>235?COLD:HOT;
+  if(seg===2)return x>470?HOT:x>290?mix(HOT,LIQ,(470-x)/180):LIQ;
+  if(seg===3)return y<235?LIQ:COLD;
+  return COLD;}
+const NR=14,NW=9;
+function cycSVG(){
+  let s=`<svg id="cyc" viewBox="0 0 760 470" role="img" aria-label="Ciclo de refrigeración por compresión de vapor con recuperación de calor animado" style="max-width:760px">
+<defs><marker id="ar-c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--muted)"/></marker></defs>
+<path d="M470,380 H650 V262" fill="none" stroke="${COLD}" stroke-width="5" opacity=".45"/><path d="M650,208 V90 H470" fill="none" stroke="${HOT}" stroke-width="5" opacity=".5"/>
+<path d="M290,90 H110 V208" fill="none" stroke="${LIQ}" stroke-width="5" opacity=".7"/><path d="M110,262 V380 H290" fill="none" stroke="${COLD}" stroke-width="5" opacity=".45"/>
+<rect class="nd ok" x="260" y="6" width="240" height="38" rx="8"/><text class="nt" x="380" y="30">Intercambiador de recuperación</text>
+<line x1="380" y1="62" x2="380" y2="46" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#ar-c)"/><text class="elabt" x="392" y="56" style="text-anchor:start">Q̇rec</text>
+<rect class="nd heat" x="290" y="62" width="180" height="56" rx="8"/><text class="nt" x="380" y="86">3. Condensador</text><text class="nt" id="t_QH" x="380" y="104"></text>
+<rect class="nd cold" x="290" y="352" width="180" height="56" rx="8"/><text class="nt" x="380" y="376">1. Evaporador</text><text class="nt" id="t_QL" x="380" y="394"></text>
+<circle class="nd" cx="650" cy="235" r="28"/><text class="nt" x="650" y="233">2. Comp.</text><text class="nt" id="t_W" x="650" y="249"></text>
+<path class="nd" d="M88,213 L132,257 L132,213 L88,257 Z"/><text class="nt" x="110" y="285">4. Válvula de</text><text class="nt" x="110" y="299">expansión</text>
+<text class="nt" id="t_dis" x="380" y="140" style="fill:var(--muted)"></text>
+<line x1="380" y1="436" x2="380" y2="410" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#ar-c)"/><text class="elabt" x="392" y="428" style="text-anchor:start">Q̇L</text>
+<line x1="700" y1="445" x2="60" y2="445" stroke="${COLD}" stroke-width="3" opacity=".35"/>
+<text class="nt" id="t_Tin" x="700" y="466" style="text-anchor:end"></text><text class="nt" id="t_Tout" x="60" y="466" style="text-anchor:start"></text>
+<line x1="60" y1="25" x2="700" y2="25" stroke="${COLD}" stroke-width="3" opacity=".35"/>
+<text class="nt" id="t_Tsin" x="60" y="14" style="text-anchor:start"></text><text class="nt" id="t_Tsout" x="700" y="14" style="text-anchor:end"></text>
+<g id="dots">${Array.from({length:NR+2*NW},(_,i)=>`<circle id="dt${i}" r="4.2" cx="0" cy="0" fill="${COLD}" stroke="var(--bg)" stroke-width="1"/>`).join('')}</g>
+</svg>`;return s;}
+let cycEls=null;
+function renderM2(){
+  if(!cycEls){
+    q('#m2-svg').innerHTML=cycSVG();
+    cycEls={dots:qa('#dots circle')};
+    q('#m2-sl1').innerHTML=['mw','cp','Tin','Tout','W'].map(ss).join('');
+    q('#m2-sl2').innerHTML=['f','ms','cps','Tsin'].map(ss).join('');
+    q('#m2-pre').innerHTML='<span>Escenario:</span>'+SCN.map((s,i)=>`<button class="btn" type="button" data-p="${i}">${s.n}</button>`).join('');
+    q('#m2-sc').innerHTML=q('#m2-pre').innerHTML;q('#m2-pre').style.display='none';
+    q('#m2-sl3').innerHTML=ls('V','Treq','Temperatura mínima útil del proceso receptor',20,60,1,'°C','Supuesto del simulador, no del informe')+ls('V','chOn','Sistema frigorífico: hora de arranque',0,23,1,'h')+ls('V','chOff','Sistema frigorífico: hora de parada',1,24,1,'h')+ls('V','dOn','Demanda de agua precalentada: inicio',0,23,1,'h')+ls('V','dOff','Demanda de agua precalentada: fin',1,24,1,'h')+ls('V','dKW','Potencia demandada por el proceso receptor',0.5,10,.1,'kW');
+    q('#m2-eco').innerHTML='<h4>Balance económico (5)</h4><p class="mini">Ingrese tarifas y costos reales; sin datos, el criterio queda pendiente.</p>'+ni('V','tarifa','Tarifa de la energía evitada ',' por kWh','sin dato','0.001')+ni('V','inv','Inversión total ',' (moneda local)','sin dato')+ni('V','dias','Días de operación al año','','sin dato','1')+'<div class="res-box" id="m2-ecoout">Pendiente de datos.</div>';
+    q('#m2-reset').addEventListener('click',()=>{Object.keys(DEF).forEach(k=>setKey(k,DEF[k]));update();});
+  }
+  renderM2Dyn();
+}
+function renderM2Dyn(){
+  if(!cycEls||!R||R.QL===undefined)return;
+  const set=(id,t)=>{const e=q('#'+id);if(e)e.textContent=t;};
+  set('t_QH',`Rechaza Q̇H = ${F(R.QH,3)} kW`);set('t_QL',`Absorbe Q̇L = ${F(R.QL,3)} kW`);set('t_W',`Ẇ = ${F(R.W,2)} kW`);
+  set('t_dis',`Disipa al ambiente: ${F(R.Qdis,3)} kW`);
+  set('t_Tin',`Agua de proceso entra al evaporador: ${F(R.Tin,1)} °C (retorno del molde)`);set('t_Tout',`Sale a ${F(R.Tout,1)} °C (hacia el molde)`);
+  set('t_Tsin',`Agua secundaria entra: ${F(R.Tsin,1)} °C`);set('t_Tsout',`Sale: ${F(R.Tsout,1)} °C (teórica)`);
+  const w=q('#m2-warn');if(R.Tin<=R.Tout){w.hidden=false;w.textContent='La temperatura de entrada debe ser mayor que la de salida; con estos valores no hay calor retirado.';}else w.hidden=true;
+  const same=Object.keys(DEF).every(k=>Math.abs(S[k]-DEF[k])<1e-9);const c=q('#scn-chip4');c.className='chip '+(same?'c-sup':'c-sim');c.textContent=same?'Escenario del informe':'Escenario modificado';
+  drawBars();drawScn();drawDay();
+}
+function drawBars(){
+  const QL=Math.max(R.QL,0),W=R.W,QH=Math.max(R.QH,1e-9),Qr=Math.max(R.Qrec,0),Qd=Math.max(R.Qdis,0),w=560,sc=w/QH;
+  const bar=(y,parts)=>{let x=0,s='';parts.forEach(p=>{const ww=p[1]*sc;s+=`<rect x="${x}" y="${y}" width="${Math.max(ww,0)}" height="30" fill="${p[2]}"/><text x="${x+ww/2}" y="${y+19}" text-anchor="middle" style="font-size:12px;fill:#fff;font-weight:600">${ww>70?p[0]:''}</text>`;x+=ww;});return s;};
+  q('#m2-bars').innerHTML=`<svg class="bar2" viewBox="0 0 ${w} 140" role="img" aria-label="Composición del calor rechazado"><text x="0" y="14" style="font-size:12px;fill:var(--muted)">Q̇H = Q̇L + Ẇcomp</text>${bar(20,[['Q̇L '+F(QL,2),QL,COLD],['Ẇ '+F(W,2),W,'#4a5b68']])}<text x="0" y="80" style="font-size:12px;fill:var(--muted)">Q̇H = recuperado + disipado</text>${bar(86,[['Rec. '+F(Qr,2),Qr,'#1d7a4d'],['Disip. '+F(Qd,2),Qd,HOT]])}</svg>`;
+}
+function drawScn(){
+  const rows=SCN.map(s=>{const qq=s.f*R.QH,d=qq/(s.ms*S.cps);return `<tr><td><b>${s.n}</b></td><td>${F(s.f,2)}</td><td>${F(s.ms,2)}</td><td>${F(qq,3)}</td><td>${F(d,2)}</td><td>${F(S.Tsin+d,1)}</td></tr>`;}).join('');
+  q('#m2-st').innerHTML='<thead><tr><th>Escenario</th><th>f<sub>rec</sub></th><th>ṁ<sub>sec</sub></th><th>Q̇<sub>rec</sub> kW</th><th>ΔT<sub>sec</sub> °C</th><th>T<sub>sal</sub> °C</th></tr></thead><tbody>'+rows+'</tbody>';
+}
+let dayRes={gen:0,use:0};
+function drawDay(){
+  const qr=Math.max(R.Qrec,0);let gen=0,use=0;const w=560,h=150,bw=w/24,top=Math.max(qr,V.dKW,1)*1.2;
+  let s=`<svg class="bar2" viewBox="0 0 ${w} ${h+22}" role="img" aria-label="Calor recuperable y aprovechado por hora">`;
+  for(let hr=0;hr<24;hr++){
+    const on=hr>=V.chOn&&hr<V.chOff,dm=hr>=V.dOn&&hr<V.dOff,g=on?qr:0,u=on&&dm?Math.min(qr,V.dKW):0;gen+=g;use+=u;
+    const x=hr*bw+1,hg=g/top*h,hu=u/top*h;
+    s+=`<rect x="${x}" y="${h-hg}" width="${bw-2}" height="${hg}" fill="#1d7a4d" opacity=".25"/><rect x="${x}" y="${h-hu}" width="${bw-2}" height="${hu}" fill="#1d7a4d"/>`;
+    if(dm)s+=`<line x1="${x}" x2="${x+bw-2}" y1="${h-V.dKW/top*h}" y2="${h-V.dKW/top*h}" stroke="${HOT}" stroke-width="2" stroke-dasharray="4 2"/>`;
+    if(hr%3===0)s+=`<text x="${x}" y="${h+14}" style="font-size:10px;fill:var(--muted)">${hr}h</text>`;
+  }
+  q('#m2-day').innerHTML=s+'</svg><p class="mini">Barra tenue: calor recuperable generado cuando el sistema opera · barra sólida: calor aprovechado · línea naranja: demanda del proceso receptor.</p>';
+  dayRes={gen,use};
+  q('#m2-dayres').innerHTML=`Generado: <b>${F(gen,1)} kWh/día</b> · Aprovechado: <b>${F(use,1)} kWh/día</b> · Aprovechamiento: <b>${gen>0?F(use/gen*100,0):'—'} %</b> <span class="chip c-sim">Simulación</span>`;
+  drawCrit();
+}
+function drawCrit(){
+  const days=V.dias,tar=V.tarifa,inv=V.inv;let pb=NaN;
+  if(days!==''&&tar!==''&&inv!==''&&days>0&&tar>0&&inv>0&&dayRes.use>0)pb=inv/(dayRes.use*days*tar);
+  const c=[
+   ['Disponibilidad de calor',R.Qrec>0&&R.Tsout>S.Tsin?'ok':'bad',`Q̇rec calculada: ${F(R.Qrec,3)} kW. Falta medir el nivel de temperatura del condensador.`],
+   ['Demanda coincidente',dayRes.use>0?'ok':'bad',`Aprovechado ${F(dayRes.use,1)} de ${F(dayRes.gen,1)} kWh/día según el perfil supuesto.`],
+   ['Compatibilidad térmica',R.Tsout>=V.Treq?'ok':'bad',`T salida teórica ${F(R.Tsout,1)} °C frente a ${F(V.Treq,0)} °C requeridos (supuesto).`],
+   ['Integridad del ciclo frigorífico',V.ok4?'ok':'pend','El intercambiador no debe provocar presiones de condensación o temperaturas que perjudiquen la capacidad o eficiencia.','ok4'],
+   ['Balance económico',isFinite(pb)?'ok':'pend',isFinite(pb)?`Periodo de retorno simple: ${F(pb,1)} años.`:'Ingrese tarifa, inversión y días de operación.'],
+   ['Seguridad e higiene',V.ok6?'ok':'pend','Circuito recuperado separado del agua de proceso cuando corresponda y uso ajustado a la calidad exigida.','ok6']];
+  const nok=c.filter(x=>x[1]==='ok').length;
+  q('#m2-crit').innerHTML=c.map(x=>`<div class="crit"><span class="dot ${x[1]}" aria-hidden="true"></span><div><b>${x[0]}</b><div class="mini">${x[2]}</div></div>${x[3]?`<label class="inl"><input type="checkbox" data-o2="V" data-key="${x[3]}" ${V[x[3]]?'checked':''}> verificado</label>`:`<span class="${'sem-'+x[1]}">${{ok:'Cumple (sim.)',bad:'No cumple',pend:'Pendiente'}[x[1]]}</span>`}</div>`).join('')+
+   `<p><b>${nok} de 6</b> criterios cumplidos. ${nok===6?'Viable en simulación; requiere medición real.':'Se considera viable solo si cumple los seis simultáneamente.'}</p>`;
+  const eo=q('#m2-ecoout');if(eo)eo.innerHTML=isFinite(pb)?`Periodo de retorno simple: <b>${F(pb,1)} años</b> (ahorro anual = energía aprovechada × días × tarifa).`:'Pendiente de datos.';
+}
+function animDots(){
+  if(!cycEls)return;
+  const vref=60+Math.max(R.QL||0,0)*10,vw=60*(S.mw/.25),vs=60*(S.ms/.1);
+  const D=cycEls.dots;
+  for(let i=0;i<NR;i++){const pt=ptAt(anim*vref+i*LOOPT/NR);D[i].setAttribute('cx',pt.x);D[i].setAttribute('cy',pt.y);D[i].setAttribute('fill',refColor(pt));}
+  for(let i=0;i<NW;i++){
+    const s1=(anim*vw+i*640/NW)%640,x=700-s1;D[NR+i].setAttribute('cx',x);D[NR+i].setAttribute('cy',445);D[NR+i].setAttribute('fill',mix(COLD,HOT,(x-60)/640*.9));
+    const s2=(anim*vs+i*640/NW)%640,x2=60+s2,dTf=clamp((R.dTs||0)/30,0,1);D[NR+NW+i].setAttribute('cx',x2);D[NR+NW+i].setAttribute('cy',25);D[NR+NW+i].setAttribute('fill',mix(COLD,HOT,clamp((x2-260)/240,0,1)*dTf));
+  }
+}
+
+/* =========================================================
+   M3  MOLDE
+   ========================================================= */
+function cfgM(c){
+  const tcl=tCoolOf(c),okc=isFinite(tcl),tc=P.tExt+P.tBlow+P.tOpen+(okc?tcl:P.tCool),def=c==='conv'?M.defConv:M.defConf,pump=c==='conv'?M.pumpConv:M.pumpConf,dp=c==='conv'?M.dpConv:M.dpConf;
+  return {tau:tauOf(c),tcl,okc,tc,def,pump,dp,E:(S.W+pump)*tc/3600/(1-def/100)};}
+let m3Init=false;
+function renderM3(){
+  if(!m3Init){
+    m3Init=true;
+    q('#m3-sl').innerHTML=ls('M','T0','Temperatura inicial del envase T₀',100,260,1,'°C')+ls('M','Tx','Temperatura de extracción (criterio constante)',30,120,1,'°C')+ls('M','tau','Constante de tiempo convencional τ',3,40,.5,'s')+ls('M','ratio','Factor τ conformado / τ convencional',.4,1.3,.01,'(1,00 = sin mejora)','Hipótesis del usuario, no un resultado del informe')+
+      ls('M','defConv','Defectos supuestos, convencional',0,15,.5,'%')+ls('M','defConf','Defectos supuestos, conformado',0,15,.5,'%')+ls('M','dpConv','Pérdida de presión, convencional',5,150,1,'kPa')+ls('M','dpConf','Pérdida de presión, conformado',5,150,1,'kPa')+ls('M','dpMax','Pérdida de presión máxima aceptable',10,200,1,'kPa')+ls('M','pumpConv','Consumo auxiliar (bombeo), convencional',0,2,.05,'kW')+ls('M','pumpConf','Consumo auxiliar (bombeo), conformado',0,2,.05,'kW');
+    q('#m3-geo').innerHTML=geoSVG();
+    q('#m3-flow').innerHTML=flow('adi2',{w:720,h:800,label:'Secuencia de diseño, fabricación y validación del inserto',nodes:[
+     {id:'1',x:300,y:30,t:'Definir geometría y\nrequisitos del envase'},{id:'2',x:300,y:100,t:'Modelar molde y canales\nen CAD'},{id:'3',x:300,y:170,t:'Simular temperatura y flujo\nmediante CFD',cls:'sim'},{id:'4',x:300,y:240,t:'Revisar uniformidad térmica\ny pérdida de presión'},
+     {id:'5',x:300,y:320,t:'¿Diseño viable?',cls:'decision'},{id:'6',x:580,y:320,t:'Modificar geometría y\nvolver a simular',cls:'warn'},{id:'7',x:300,y:410,t:'Fabricar prototipo del\ninserto por LPBF'},{id:'8',x:300,y:480,t:'Inspección dimensional\ny de canales'},
+     {id:'9',x:300,y:550,t:'Prueba de hermeticidad\ny circulación'},{id:'10',x:300,y:620,t:'Ensayo controlado de\nmoldeo por soplado'},{id:'11',x:300,y:690,t:'Comparar con el molde\nde referencia'},{id:'12',x:300,y:760,t:'Aceptar, ajustar o\ndescartar la mejora',cls:'ok'}],
+     edges:[E('1','2'),E('2','3'),E('3','4'),E('4','5'),E('5','7','b','t','Sí'),E('5','6','r','l','No'),E('6','3','t','r'),E('7','8'),E('8','9'),E('9','10'),E('10','11'),E('11','12')]});
+    const vr=[['Temperatura del molde','Campo de temperatura y distribución espacial','Termopares o sensores calibrados en ubicaciones definidas.'],['Tiempo de enfriamiento','Estimación del tiempo para alcanzar el criterio térmico definido','Cronometraje del ciclo con un criterio de extracción constante.'],['Caudal del refrigerante','Predicción del flujo en los canales','Caudalímetro instalado en el circuito.'],['Pérdida de presión','Cálculo de la diferencia de presión entre entrada y salida','Sensores de presión o manómetros adecuados.'],['Espesor de pared','No debe inferirse únicamente de la temperatura; requiere un modelo de proceso apropiado','Medición del espesor en puntos establecidos.'],['Deformación dimensional','Predicción térmica-mecánica si el modelo y las propiedades están disponibles','Medición de dimensiones y deformación tras el enfriamiento.'],['Defectos','Predicción de zonas de riesgo a partir de hipótesis físicas y parámetros','Inspección y registro de defectos observados.']];
+    q('#m3-vars').innerHTML='<thead><tr><th>Variable</th><th>En simulación</th><th>En validación física</th></tr></thead><tbody>'+vr.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')+'</tbody>';
+  }
+  renderM3Dyn();
+}
+function geoSVG(){
+  const poly=[[130,30],[170,30],[170,70],[215,100],[225,125],[225,250],[210,270],[90,270],[75,250],[75,125],[85,100],[130,70]];
+  const samp=[];for(let i=0;i<poly.length;i++){const a=poly[i],b=poly[(i+1)%poly.length],len=Math.hypot(b[0]-a[0],b[1]-a[1]),n=Math.max(1,Math.round(len/6));for(let k=0;k<n;k++)samp.push({x:lerp(a[0],b[0],k/n),y:lerp(a[1],b[1],k/n),dx:(b[0]-a[0])/len,dy:(b[1]-a[1])/len});}
+  const inside=(x,y)=>{let c=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const xi=poly[i][0],yi=poly[i][1],xj=poly[j][0],yj=poly[j][1];if((yi>y)!==(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi)c=!c;}return c;};
+  const conv=[];[95,140,185,230].forEach(y=>{conv.push([30,y]);conv.push([270,y]);});
+  const conf=[];for(let i=0;i<samp.length;i+=5){const s=samp[i];let nx=s.dy,ny=-s.dx;if(inside(s.x+nx,s.y+ny)){nx=-nx;ny=-ny;}conf.push([s.x+nx*24,s.y+ny*24]);}
+  const draw=(ch,title)=>{
+    const ds=samp.map(s=>Math.max(0,Math.min(...ch.map(c=>Math.hypot(c[0]-s.x,c[1]-s.y)))-6));
+    const mn=Math.min(...ds),mx=Math.max(...ds),mu=mean(ds);
+    let o=`<svg viewBox="0 0 300 300" role="img" aria-label="${title}" style="max-width:300px;width:100%"><text x="150" y="16" text-anchor="middle" style="font-size:13px;font-weight:600">${title}</text>`;
+    samp.forEach((s,i)=>{o+=`<circle cx="${s.x}" cy="${s.y}" r="3.2" fill="${mix(COLD,HOT,ds[i]/60)}"/>`;});
+    ch.forEach(c=>{o+=`<circle cx="${c[0]}" cy="${c[1]}" r="6" fill="var(--surface)" stroke="${COLD}" stroke-width="2"/>`;});
+    o+=`<text x="150" y="294" text-anchor="middle" style="font-size:11px;fill:var(--muted)">distancia ${F(mn,0)}–${F(mx,0)} u (variación ${F((mx-mn)/mu*100,0)} %)</text></svg>`;return o;};
+  return `<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">${draw(conv,'A. Canales rectos')}${draw(conf,'B. Canales conformados')}</div>`;
+}
+function curveSVG(cA,cB){
+  const Tw=S.Tout,w=560,h=250,pl=44,pr=14,pt=14,pb=34;
+  if(!cA.okc||!cB.okc)return '<div class="note bad">Condiciones inválidas: se requiere T₀ &gt; T<sub>extracción</sub> &gt; T<sub>refrigerante</sub> y τ &gt; 0.</div>';
+  const tmax=Math.max(cA.tcl,cB.tcl,10)*1.35,X=t=>pl+t/tmax*(w-pl-pr),Y=T=>pt+(1-(T-Tw)/(M.T0-Tw))*(h-pt-pb);
+  const path=tau=>{let d='';for(let i=0;i<=80;i++){const t=tmax*i/80,T=Tw+(M.T0-Tw)*Math.exp(-t/tau);d+=(i?'L':'M')+X(t).toFixed(1)+','+Y(T).toFixed(1);}return d;};
+  let s=`<svg class="bar2" viewBox="0 0 ${w} ${h}" role="img" aria-label="Curvas de enfriamiento convencional y conformado" style="max-width:640px"><line x1="${pl}" y1="${h-pb}" x2="${w-pr}" y2="${h-pb}" stroke="var(--muted)"/><line x1="${pl}" y1="${pt}" x2="${pl}" y2="${h-pb}" stroke="var(--muted)"/>`;
+  s+=`<line x1="${pl}" x2="${w-pr}" y1="${Y(M.Tx)}" y2="${Y(M.Tx)}" stroke="var(--warn)" stroke-dasharray="5 4"/><text x="${w-pr}" y="${Y(M.Tx)-4}" text-anchor="end" style="font-size:11px;fill:var(--warn)">criterio de extracción ${F(M.Tx,0)} °C</text>`;
+  s+=`<path d="${path(cA.tau)}" fill="none" stroke="${COLD}" stroke-width="2.5"/><path d="${path(cB.tau)}" fill="none" stroke="${HOT}" stroke-width="2.5" stroke-dasharray="${M.ratio===1?'6 4':'0'}"/>`;
+  s+=`<circle cx="${X(cA.tcl)}" cy="${Y(M.Tx)}" r="4.5" fill="${COLD}"/><circle cx="${X(cB.tcl)}" cy="${Y(M.Tx)}" r="4.5" fill="${HOT}"/>`;
+  s+=`<text x="${pl+8}" y="${pt+12}" style="font-size:12px;fill:${COLD}">━ Convencional: ${F(cA.tcl,1)} s</text><text x="${pl+8}" y="${pt+28}" style="font-size:12px;fill:${HOT}">━ Conformado: ${F(cB.tcl,1)} s</text>`;
+  s+=`<text x="${(pl+w)/2}" y="${h-8}" text-anchor="middle" style="font-size:11px;fill:var(--muted)">tiempo desde el inicio del enfriamiento (s)</text><text x="${pl-6}" y="${pt+8}" text-anchor="end" style="font-size:11px;fill:var(--muted)">${F(M.T0,0)}</text><text x="${pl-6}" y="${h-pb}" text-anchor="end" style="font-size:11px;fill:var(--muted)">${F(Tw,0)}</text>`;
+  return s+'</svg>';
+}
+function renderM3Dyn(){
+  const a=cfgM('conv'),b=cfgM('conf');
+  q('#m3-curve').innerHTML=curveSVG(a,b);
+  if(!a.okc||!b.okc){q('#m3-cmp').innerHTML='<p>Ajuste T₀, T<sub>extracción</sub> y τ para obtener tiempos válidos.</p>';return;}
+  const d=a.tc-b.tc,pc=d/a.tc*100;
+  const tests=[
+   [d>1e-9,`Reducción del tiempo de ciclo: ${F(d,2)} s (${F(pc,1)} %)`],
+   [b.def<=a.def,`La calidad no empeora (defectos ${F(b.def,1)} % frente a ${F(a.def,1)} %)`],
+   [b.dp<=M.dpMax,`Pérdida de presión ${F(b.dp,0)} kPa ≤ máximo aceptable ${F(M.dpMax,0)} kPa`],
+   [b.E<a.E,`El consumo auxiliar no anula el beneficio (energía por envase ${F(b.E*1000,2)} frente a ${F(a.E*1000,2)} Wh)`]];
+  const all=tests.every(t=>t[0]);
+  q('#m3-cmp').innerHTML=`<div class="tw" style="margin:6px 0"><table style="min-width:0"><thead><tr><th></th><th>Convencional</th><th>Conformado</th></tr></thead><tbody>
+   <tr><td>τ (s)</td><td>${F(a.tau,1)}</td><td>${F(b.tau,1)}</td></tr><tr><td>Tiempo de enfriamiento (s)</td><td>${F(a.tcl,1)}</td><td>${F(b.tcl,1)}</td></tr><tr><td>Tiempo de ciclo t<sub>c</sub> (s)</td><td>${F(a.tc,1)}</td><td>${F(b.tc,1)}</td></tr>
+   <tr><td>ΔP (kPa)</td><td>${F(a.dp,0)}</td><td>${F(b.dp,0)}</td></tr><tr><td>Energía por envase aceptado (Wh)</td><td>${F(a.E*1000,2)}</td><td>${F(b.E*1000,2)}</td></tr></tbody></table></div>
+   <p>Δt<sub>c</sub> = t<sub>c,conv</sub> − t<sub>c,conf</sub> = <b>${F(d,2)} s</b> · % reducción = <b>${F(pc,1)} %</b></p>
+   ${tests.map(t=>`<div class="crit"><span class="dot ${t[0]?'ok':'bad'}" aria-hidden="true"></span><div class="mini" style="color:var(--ink)">${t[1]}</div><span class="${t[0]?'sem-ok':'sem-bad'}">${t[0]?'Cumple':'No cumple'}</span></div>`).join('')}
+   <div class="note ${all?'ok':'warn'}" style="margin-bottom:0">${all?'Con las hipótesis ingresadas la mejora sería exitosa en simulación. Sigue pendiente la validación física con la geometría real del molde de soplado.':'La mejora no se considera exitosa: una reducción del tiempo de enfriamiento no vale si empeora la calidad, incrementa la pérdida de presión o exige un consumo auxiliar que anule el beneficio.'}</div>`;
+}
+
+/* =========================================================
+   M4  IOT Y GEMELO DIGITAL
+   ========================================================= */
+let m4Init=false;
+function renderM4S(){
+  if(m4Init)return;m4Init=true;
+  q('#m4-sl').innerHTML=ls('M','noise','Ruido de los sensores',0,2,.05,'K eq.')+ls('M','bias','Error sistemático modelo–sensor',-5,8,.1,'K','El modelo parte sin calibrar: la calibración debe corregirlo.');
+  qa('[data-flt]').forEach(b=>b.addEventListener('click',()=>{const k=b.dataset.flt,on=!G.fl[k];G.fl[k]=on;if(k==='drift'&&on)G.fl.d0=G.t;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on);}));
+  q('#m4-clr').addEventListener('click',()=>{G.fl.flow=G.fl.temp=G.fl.drift=false;qa('[data-flt]').forEach(b=>{b.classList.remove('on');b.setAttribute('aria-pressed',false);});});
+}
+function lineChart(cv,data,color,unit){
+  const ctx=cv.getContext&&cv.getContext('2d');if(!ctx)return;
+  const dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;if(!w||!h)return;
+  if(cv.width!==Math.round(w*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);}
+  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+  const line=cssv('--line')||'#ccc',mut=cssv('--muted')||'#666';
+  if(data.length<2)return;
+  let mn=Math.min(...data),mx=Math.max(...data);if(mx-mn<1e-6){mn-=.5;mx+=.5;}const pad=(mx-mn)*.12;mn-=pad;mx+=pad;
+  const L0=44,R0=8,T0=8,B0=18,X=i=>L0+i/(data.length-1)*(w-L0-R0),Y=v=>T0+(1-(v-mn)/(mx-mn))*(h-T0-B0);
+  ctx.strokeStyle=line;ctx.fillStyle=mut;ctx.font='11px sans-serif';ctx.lineWidth=1;
+  for(let g=0;g<=2;g++){const v=mn+(mx-mn)*g/2,y=Y(v);ctx.beginPath();ctx.moveTo(L0,y);ctx.lineTo(w-R0,y);ctx.stroke();ctx.fillText(v.toFixed(Math.abs(mx)<10?2:1),2,y+4);}
+  ctx.fillText('últimos '+Math.round(data.length*.5)+' s',L0,h-4);
+  ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();data.forEach((v,i)=>{i?ctx.lineTo(X(i),Y(v)):ctx.moveTo(X(i),Y(v));});ctx.stroke();
+}
+function drawCharts(){
+  const B=G.buf;
+  [['c-tm',B.tm,HOT],['c-dt',B.dt,COLD],['c-dp',B.dp,'#6a4fb3'],['c-pw',B.pw,'#4a5b68']].forEach(c=>{const cv_=q('#'+c[0]);if(cv_)lineChart(cv_,c[1],c[2]);});
+}
+function renderM4(){
+  const al=q('#m4-alert');
+  al.innerHTML=G.lastAnom&&G.t-G.lastAnom.t<60?`<div class="anom"><b>Desviación detectada</b> en ${G.lastAnom.v} respecto de la línea base de los ciclos previos. Revise el registro y correlacione con las variables del proceso antes de atribuir una causa.</div>`:'';
+  const hl=a=>a.length?a[a.length-1]:NaN;
+  const rows=[
+   ['Tiempo de ciclo',F(G.cycT,1)+' s','Tiempo entre eventos de referencia de cada ciclo','Control de máquina y registro temporal','c-sim','Sintético'],
+   ['Consumo eléctrico específico',G.acc>0?F(G.E/G.acc,4)+' kWh/envase':'—','Energía consumida / envases aceptados (frontera: solo compresor)','Analizador eléctrico y registro de producción','c-sim','Sintético'],
+   ['Diferencia de temperatura del refrigerante',isNaN(hl(G.hist.dT))?'—':F(hl(G.hist.dT),2)+' K','T salida − T entrada','Sensores de temperatura','c-sim','Sintético'],
+   ['Diferencia de presión',isNaN(hl(G.hist.dp))?'—':F(hl(G.hist.dp),1)+' kPa','Presión de entrada − presión de salida','Sensores de presión','c-sim','Sintético'],
+   ['Variabilidad del espesor',G.thick.length>2?'σ = '+F(sd(G.thick),3)+' mm':'—','Dispersión de espesores en puntos definidos','Inspección dimensional','c-sim','Sintético'],
+   ['Tasa de defectos',(G.acc+G.rej)>0?F(G.rej/(G.acc+G.rej)*100,1)+' %':'—','Defectuosos / inspeccionados × 100 %','Registro de control de calidad','c-sim','Sintético'],
+   ['Fracción de recuperación térmica',F(R.f*100,0)+' %','Calor del circuito secundario / calor rechazado','Caudalímetros, sensores y balance energético','c-sup','Supuesto (no medida)']];
+  q('#m4-ind').innerHTML='<thead><tr><th>Indicador</th><th>Valor actual</th><th>Definición operativa</th><th>Fuente de datos real</th><th>Origen</th></tr></thead><tbody>'+rows.map(r=>`<tr><td>${r[0]}</td><td class="n"><b>${r[1]}</b></td><td>${r[2]}</td><td>${r[3]}</td><td><span class="chip ${r[4]}">${r[5]}</span></td></tr>`).join('')+'</tbody>';
+  twin();
+  q('#m4-log').innerHTML='<thead><tr><th>t sim (s)</th><th>Lote</th><th>Molde</th><th>Variable</th><th>Valor</th><th>z</th></tr></thead><tbody>'+(G.events.length?G.events.slice(0,10).map(e=>`<tr><td>${F(e.t,0)}</td><td>${e.lot}</td><td>${e.cfg}</td><td>${e.v}</td><td>${F(e.val,3)}</td><td>${F(e.z,1)}</td></tr>`).join(''):'<tr><td colspan="6" class="mini">Sin desviaciones registradas.</td></tr>')+'</tbody>';
+}
+const KCAL=4;
+function twin(){
+  const cal=G.pairs.slice(0,KCAL),val=G.pairs.slice(KCAL),corr=cal.length?mean(cal.map(p=>p.m-p.p)):0;
+  const res=Math.abs(R.QH-(R.QL+R.W));
+  let l3='Esperando ciclos de validación…';
+  if(val.length){
+    const mae0=mean(val.map(p=>Math.abs(p.m-p.p))),mae1=mean(val.map(p=>Math.abs(p.m-(p.p+corr)))),mp0=100*mean(val.map(p=>Math.abs((p.m-p.p)/p.m))),mp1=100*mean(val.map(p=>Math.abs((p.m-(p.p+corr))/p.m)));
+    l3=`n = ${val.length} · sin calibrar: MAE = <b>${F(mae0,2)} K</b>, MAPE = <b>${F(mp0,1)} %</b> · calibrado: MAE = <b>${F(mae1,2)} K</b>, MAPE = <b>${F(mp1,1)} %</b>`;
+  }
+  q('#m4-twin').innerHTML=`<div class="crit"><span class="dot ok"></span><div><b>1. Verificación del modelo</b><div class="mini">Cierre del balance Q̇H − (Q̇L + Ẇ) = ${F(res,6)} kW; el calor medio del circuito se conserva por construcción.</div></div><span class="sem-ok">Cumple</span></div>
+   <div class="crit"><span class="dot ${cal.length>=KCAL?'ok':'pend'}"></span><div><b>2. Calibración</b><div class="mini">Primeros ${KCAL} ciclos: corrección = ${F(corr,2)} K (${cal.length}/${KCAL} ciclos).</div></div><span class="${cal.length>=KCAL?'sem-ok':'sem-pend'}">${cal.length>=KCAL?'Hecha':'En curso'}</span></div>
+   <div class="crit"><span class="dot ${val.length?'ok':'pend'}"></span><div><b>3. Validación independiente</b><div class="mini">${l3}</div></div><span class="${val.length?'sem-ok':'sem-pend'}">${val.length?'En curso':'Pendiente'}</span></div>
+   <p class="mini">Métricas: MAE = (1/n)Σ|yᵢ − ŷᵢ| y MAPE = (100/n)Σ|(yᵢ − ŷᵢ)/yᵢ|, calculadas sobre la temperatura máxima del molde por ciclo, con datos sintéticos emparejados. El MAPE no debe usarse con valores cercanos a cero. Con la deriva del sensor, el error de validación crece y el gemelo diverge.</p>`;
+}
+
+/* =========================================================
+   M5  LOTE
+   ========================================================= */
+const FS={nodes:[
+ {id:'1',x:355,y:30,t:'Recepción del lote de rHDPE'},{id:'2',x:355,y:100,t:'Identificación y muestreo'},{id:'3',x:355,y:170,t:'Ensayos: densidad,\nMFR, DSC y tracción'},{id:'4',x:355,y:240,t:'Revisión de contaminación\ny homogeneidad'},
+ {id:'5',x:355,y:320,t:'¿Cumple la especificación\ndel producto?',cls:'decision'},{id:'6',x:130,y:410,t:'Lote autorizado para\nprueba de soplado',cls:'ok'},{id:'7',x:580,y:410,t:'Retener, segregar o\nrechazar el lote',cls:'bad'},
+ {id:'8',x:130,y:490,t:'Prueba de conformado y\ncontrol del envase'},{id:'9',x:130,y:570,t:'¿El envase cumple?',cls:'decision'},{id:'10',x:130,y:650,t:'Liberación según el\nplan de calidad',cls:'ok'},{id:'11',x:355,y:650,t:'Investigar causa y ajustar\nproceso o material',cls:'warn'}],
+ edges:[E('1','2'),E('2','3'),E('3','4'),E('4','5'),E('5','6','l','t','Sí'),E('5','7','r','t','No'),E('6','8'),E('8','9'),E('9','10','b','t','Sí'),E('9','11','r','t','No')]};
+let m5Init=false;
+function renderM5(){
+  if(!m5Init){
+    m5Init=true;
+    q('#m5-t').innerHTML='<thead><tr><th>Propiedad</th><th>Método</th><th>Mínimo aceptable</th><th>Máximo aceptable</th><th>Resultado del ensayo</th><th>Estado</th></tr></thead><tbody>'+LP.map(p=>`<tr><td>${p.n} (${p.u})</td><td>${p.m}</td>${['min','max','res'].map(k=>`<td><input type="number" class="num-in" data-o2="LT" data-key="${k}_${p.k}" step="${p.s}" value="${LT[k+'_'+p.k]}" aria-label="${p.n}: ${k}"></td>`).join('')}<td id="m5-st-${p.k}"></td></tr>`).join('')+'</tbody>';
+    q('#m5-extra').innerHTML=`<label class="inl">Probetas de tracción ensayadas <input type="number" class="num-in" min="0" step="1" data-o2="LT" data-key="probetas" value="" aria-label="Probetas de tracción"></label>
+     <label class="inl">Contaminación y homogeneidad <select data-o2="LT" data-key="homog"><option value="pend">Pendiente de revisión</option><option value="ok">Satisfactoria</option><option value="bad">No satisfactoria</option></select></label>
+     <label class="inl">Agrietamiento por esfuerzo ambiental (ASTM D1693) <select data-o2="LT" data-key="escr"><option value="na">No aplica o no ensayado</option><option value="ok">Cumple</option><option value="bad">No cumple</option></select></label>
+     <label class="inl">Prueba de conformado y control del envase <select data-o2="LT" data-key="blow"><option value="none">No realizada</option><option value="ok">El envase cumple</option><option value="bad">El envase no cumple</option></select></label>`;
+    q('#m5-demo').addEventListener('click',()=>{const d={min_dens:.945,max_dens:.965,res_dens:.951,min_mfr:.2,max_mfr:.5,res_mfr:.31,min_tm:128,max_tm:136,res_tm:131,min_ys:22,max_ys:30,res_ys:25,probetas:5,homog:'ok',escr:'na',blow:'none'};Object.assign(LT,d);syncLT();renderM5Dyn();});
+    q('#m5-clr').addEventListener('click',()=>{LP.forEach(p=>{LT['min_'+p.k]=LT['max_'+p.k]=LT['res_'+p.k]='';});Object.assign(LT,{probetas:'',homog:'pend',escr:'na',blow:'none'});syncLT();renderM5Dyn();});
+  }
+  renderM5Dyn();
+}
+function syncLT(){qa('[data-o2="LT"]').forEach(el=>{el.value=LT[el.dataset.key];});}
+function evalLote(){
+  const pr=LP.map(p=>{const mn=LT['min_'+p.k],mx=LT['max_'+p.k],r=LT['res_'+p.k],hasLim=mn!==''||mx!=='',hasRes=r!=='';let st='pend';if(hasLim&&hasRes)st=((mn===''||r>=mn)&&(mx===''||r<=mx))?'ok':'bad';return {...p,mn,mx,r,hasLim,hasRes,st};});
+  const limOk=pr.every(p=>p.hasLim),resOk=pr.every(p=>p.hasRes),pro=LT.probetas===''?NaN:LT.probetas;
+  let dec='pend';
+  if(limOk&&resOk&&LT.homog!=='pend'){
+    const anyBad=pr.some(p=>p.st==='bad')||LT.homog==='bad'||LT.escr==='bad';
+    dec=anyBad?'bad':(pro>=5?'ok':'pend');
+  }
+  return {pr,limOk,resOk,pro,dec};
+}
+function renderM5Dyn(){
+  const e=evalLote();
+  e.pr.forEach(p=>{const c=q('#m5-st-'+p.k);if(c)c.innerHTML=p.st==='pend'?'<span class="chip c-med">'+(p.hasLim?'Falta resultado':'Defina límites')+'</span>':`<span class="chip ${p.st==='ok'?'c-ok':'c-bad'}">${p.st==='ok'?'Dentro de límites':'Fuera de límites'}</span>`;});
+  const lot=L.lot.trim()!=='';
+  const vis={1:true,2:lot};vis[3]=vis[2]&&e.limOk&&e.resOk;vis[4]=vis[3]&&LT.homog!=='pend';vis[5]=vis[4]&&e.dec!=='pend';
+  vis[6]=vis[5]&&e.dec==='ok';vis[7]=vis[5]&&e.dec==='bad';vis[8]=vis[6]&&LT.blow!=='none';vis[9]=vis[8];vis[10]=vis[8]&&LT.blow==='ok';vis[11]=vis[8]&&LT.blow==='bad';
+  const nodes=FS.nodes.map(n=>({...n,cls:vis[n.id]?n.cls:'dim'}));
+  q('#m5-flow').innerHTML=flow('lotes',{w:710,h:700,label:'Flujo de aprobación del lote',nodes,edges:FS.edges});
+  let msg;
+  if(!e.limOk)msg='<div class="note warn" style="margin:0">Defina primero los límites de aceptación de las cuatro propiedades: no puede declararse apto un material sin límites previos.</div>';
+  else if(!e.resOk)msg='<div class="note" style="margin:0">Límites definidos. Ingrese los resultados de ensayo de cada propiedad.</div>';
+  else if(LT.homog==='pend')msg='<div class="note" style="margin:0">Falta la revisión de contaminación y homogeneidad.</div>';
+  else if(e.dec==='ok'){msg='<div class="note ok" style="margin:0"><b>Lote autorizado para prueba de soplado.</b> '+(LT.blow==='ok'?'El envase cumple: liberación según el plan de calidad.':LT.blow==='bad'?'El envase no cumple: investigar causa y ajustar proceso o material.':'Siguiente paso: prueba de conformado y control del envase.')+'</div>';}
+  else if(e.dec==='bad')msg='<div class="note bad" style="margin:0"><b>Retener, segregar o rechazar el lote.</b> Al menos un resultado no cumple la especificación definida.</div>';
+  else msg='<div class="note warn" style="margin:0">Complete el protocolo: se propone ensayar al menos cinco probetas de tracción (propuesta del proyecto).</div>';
+  q('#m5-res').innerHTML=msg+'<p class="mini">Lote: '+esc(L.lot)+'. Si la norma advierte que un resultado no representa por sí solo la uniformidad de otras propiedades (caso del MFR), interprételo junto con el resto.</p>';
+  const rk=[];
+  const mfr=e.pr.find(p=>p.k==='mfr');if(mfr.st==='bad'&&mfr.mx!==''&&mfr.r>mfr.mx)rk.push(['MFR demasiado alto para el diseño del envase','Parisón con baja estabilidad y distribución irregular del material','Caracterización del MFR y ajuste experimental de las condiciones de extrusión']);
+  if(LT.homog==='bad')rk.push(['Contaminación o mezcla de polímeros','Defectos superficiales, pérdida de uniformidad o variación de propiedades','Inspección del material recibido, segregación y validación del lote']);
+  if(e.pr.filter(p=>(p.k==='dens'||p.k==='tm')&&p.st==='bad').length)rk.push(['Comportamiento térmico variable','Cambios en la plastificación, cristalización y contracción','Ensayo DSC y control de temperaturas de proceso']);
+  const ys=e.pr.find(p=>p.k==='ys');if(ys.st==='bad')rk.push(['Resistencia mecánica insuficiente','Deformación, fisuras o fallo durante el uso','Ensayo de tracción y prueba funcional del envase']);
+  q('#m5-risk').innerHTML=rk.length?rk.map(r=>`<p><b>${r[0]}</b><br><span class="mini">Riesgo: ${r[1]}. Control propuesto: ${r[2]}.</span></p>`).join(''):'<p class="mini">Sin riesgos señalados por los datos ingresados. El enfriamiento desigual y la variabilidad entre lotes se controlan con mediciones del molde y trazabilidad.</p>';
+}
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+/* =========================================================
+   M6  VALIDACIÓN
+   ========================================================= */
+const MAT=[
+ ['Asegurar la aptitud del rHDPE','Resultados de ensayos y trazabilidad del lote','Cumplimiento de la especificación definida antes de ensayar.'],
+ ['Evaluar la refrigeración','Caudal, temperaturas y consumo eléctrico medidos','Balance energético consistente y COP reportado con frontera explícita.'],
+ ['Validar la recuperación de calor','Potencia térmica transferida y demanda real de agua precalentada','Beneficio térmico útil sin comprometer el funcionamiento frigorífico.'],
+ ['Evaluar canales conformados','Simulación, inspección del inserto y ensayos comparativos','Mejora verificable sin deterioro de calidad ni pérdidas de presión inaceptables.'],
+ ['Integrar tecnologías digitales','Registros trazables, modelo calibrado y validación independiente','Errores documentados y predicciones suficientemente fiables para el propósito definido.']];
+const SEMV=['Pendiente de evidencia','En evaluación','Cumple el criterio','No cumple'];
+const SEMS=MAT.map(()=>0);
+let m6Init=false;
+function renderM6(){
+  if(!m6Init){
+    m6Init=true;
+    q('#m6-t').innerHTML='<thead><tr><th>Objetivo</th><th>Evidencia necesaria</th><th>Criterio de decisión</th><th>Estado</th></tr></thead><tbody>'+MAT.map((r,i)=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td><select class="sem6" data-i="${i}" aria-label="Estado de ${r[0]}">${SEMV.map(o=>`<option>${o}</option>`).join('')}</select></td></tr>`).join('')+'</tbody>';
+    q('#m6-t').addEventListener('change',e=>{if(e.target.classList.contains('sem6')){SEMS[+e.target.dataset.i]=SEMV.indexOf(e.target.value);paintM6();}});
+  }
+  paintM6();
+}
+function paintM6(){
+  const bg=['bg','warn-bg','ok-bg','bad-bg'],br=['line','warn','ok','bad'];
+  qa('.sem6').forEach(s=>{const k=SEMV.indexOf(s.value);s.style.background=`var(--${bg[k]})`;s.style.borderColor=`var(--${br[k]})`;});
+  q('#m6-res').textContent=`${SEMS.filter(v=>v===0).length} de ${MAT.length} objetivos permanecen pendientes de evidencia.`;
+}
+
+/* =========================================================
+   ENLACE CON EL ESTADO COMPARTIDO Y BUCLE
+   ========================================================= */
+let frame=0;
+function onState(){
+  if(!G)return;
+  if(curMod===2)renderM2Dyn();
+  if(curMod===3)renderM3Dyn();
+}
+const _upd=window.update;
+window.update=function(){_upd.apply(this,arguments);onState();};
+
+document.addEventListener('input',e=>{
+  const t=e.target,o=t.dataset&&t.dataset.o2;if(!o)return;
+  const key=t.dataset.key;let v;
+  if(t.type==='checkbox')v=t.checked;
+  else if(t.type==='number')v=t.value===''?'':parseFloat(t.value);
+  else if(t.type==='range')v=parseFloat(t.value);
+  else if(t.tagName==='SELECT')v=key==='speed'?+t.value:t.value;
+  else v=t.value;
+  if(typeof v==='number'&&isNaN(v))return;
+  OBJ[o][key]=v;
+  qa(`[data-o2="${o}"][data-key="${key}"]`).forEach(el=>{if(el!==t&&el.type!=='checkbox')el.value=v;});
+  if(o==='LT')renderM5Dyn();
+  else if(o==='V')drawDay();
+  else if(o==='M'||o==='P'){if(curMod===3)renderM3Dyn();if(curMod===1&&o==='P')tlSig='';}
+  else if(o==='L'&&curMod===5)renderM5Dyn();
+});
+document.addEventListener('click',e=>{
+  const g=e.target.closest&&e.target.closest('[data-goto]');
+  if(g){showView('doc');const el=q(g.dataset.goto);if(el)el.scrollIntoView();}
+  const vb=e.target.closest&&e.target.closest('.ab-tabs [data-view]');if(vb)showView(vb.dataset.view);
+  const mb=e.target.closest&&e.target.closest('#mods [data-m]');if(mb)showMod(+mb.dataset.m);
+});
+q('#b-play').addEventListener('click',()=>{P.running=!P.running;const b=q('#b-play');b.textContent=P.running?'⏸ Pausar':'▶ Reanudar';b.classList.toggle('on',P.running);});
+q('#b-reset').addEventListener('click',()=>{resetG();anim=0;tlSig='';flowSig='';});
+q('#theme2').addEventListener('click',()=>{const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==='dark':(typeof matchMedia==='function'&&matchMedia('(prefers-color-scheme: dark)').matches);r.dataset.theme=dark?'light':'dark';});
+q('#sp').value=String(P.speed);
+{const b=q('#b-play');b.textContent=P.running?'⏸ Pausar':'▶ Iniciar';b.classList.toggle('on',P.running);}
+
+function hud(){
+  q('#h-phase').textContent=G.phs[G.ph].n;q('#h-t').textContent=F(G.t,0);q('#h-n').textContent=G.n;q('#h-acc').textContent=G.acc;q('#h-rej').textContent=G.rej;q('#h-e').textContent=F(G.E,3);
+}
+let last=performance.now(),acc=0;
+function loop(now){
+  const rdt=Math.min(.1,(now-last)/1000);last=now;
+  if(P.running){acc+=rdt*P.speed;let n=0;while(acc>=.1&&n<200){step(.1);acc-=.1;n++;}if(n>=200)acc=0;anim+=rdt*P.speed;}
+  frame++;
+  try{
+    hud();
+    if(curMod===1)renderM1Live(frame);
+    if(curMod===2)animDots();
+    if(curMod===4&&frame%3===0){drawCharts();if(frame%12===0)renderM4();}
+  }catch(err){console.error(err);}
+  requestAnimationFrame(loop);
+}
+buildTabs();
+renderMod(1);
+onState();
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
